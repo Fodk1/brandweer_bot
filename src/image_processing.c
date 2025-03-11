@@ -20,11 +20,11 @@ typedef struct {
     uint8_t x;
 } PixPos;
 
-void ppsPush(PixPos *stack, uint8_t* sp, PixPos pixPos) {
+void ppsPush(PixPos* stack, uint8_t* sp, PixPos pixPos) {
     stack[(*sp)++] = pixPos;
 }
 
-PixPos ppsPop(PixPos *stack, uint8_t* sp) {
+PixPos ppsPop(PixPos* stack, uint8_t* sp) {
     return stack[--(*sp)];
 }
 
