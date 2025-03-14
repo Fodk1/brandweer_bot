@@ -70,7 +70,7 @@ void findObj(const uint8_t image[][IMAGE_WIDTH], uint8_t posState[][IMAGE_WIDTH]
 /**
  * Takes a grid of object ID's and returns the centers as well as the size of the objects in that grid.
  */
-PerceptedObj* getObjData(const uint8_t posState[][IMAGE_WIDTH], uint8_t objsInSight) {
+PerceivedObj* getObjData(const uint8_t posState[][IMAGE_WIDTH], uint8_t objsInSight) {
     struct DataFind {
         uint16_t combinedY;     // Sum of all Y positions of an object
         uint16_t combinedX;     // Sum of all X positions of an object
@@ -96,19 +96,19 @@ PerceptedObj* getObjData(const uint8_t posState[][IMAGE_WIDTH], uint8_t objsInSi
         }
     }
     // Store found object data in 'PerceptedObj' structs
-    PerceptedObj* perceptedObj = (PerceptedObj*) malloc(sizeof(PerceptedObj) * objsInSight);
+    PerceivedObj* perceivedObj = (PerceivedObj*) malloc(sizeof(PerceivedObj) * objsInSight);
     for (uint8_t i = 0; i < objsInSight; i++) {
-        perceptedObj[i].obj_size = objData[i].totalPixels;
+        perceivedObj[i].obj_size = objData[i].totalPixels;
 
         // Calculate average XY position (center of object)
-        perceptedObj[i].y = ((float) objData[i].combinedY) / objData[i].totalPixels;
-        perceptedObj[i].x = ((float) objData[i].combinedX) / objData[i].totalPixels;
+        perceivedObj[i].y = ((float) objData[i].combinedY) / objData[i].totalPixels;
+        perceivedObj[i].x = ((float) objData[i].combinedX) / objData[i].totalPixels;
     }
     free(objData);
-    return perceptedObj;
+    return perceivedObj;
 }
 
-AllPerceptedObjs processImage(const uint8_t image[][IMAGE_WIDTH]) {
+AllPerceivedObjs processImage(const uint8_t image[][IMAGE_WIDTH]) {
     // Array with the state of each position (if it has already been mapped or not)
     uint8_t posState[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
     uint8_t currObjID = 1;
@@ -122,9 +122,9 @@ AllPerceptedObjs processImage(const uint8_t image[][IMAGE_WIDTH]) {
         }
     }
     uint8_t objsInSight = currObjID - 1;
-    PerceptedObj* perceptedObjs = getObjData(posState, objsInSight);
+    PerceivedObj* perceivedObjs = getObjData(posState, objsInSight);
 
     // Package objects for simple use
-    AllPerceptedObjs allObjs = {.objs = perceptedObjs, .objCount = objsInSight};
+    AllPerceivedObjs allObjs = {.objs = perceivedObjs, .objCount = objsInSight};
     return allObjs;
 }

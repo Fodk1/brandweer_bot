@@ -11,18 +11,18 @@ typedef struct {
     float y;
     float x;
     uint16_t obj_size; // Fire size in pixels
-} PerceptedObj;
+} PerceivedObj;
 
 // Structure with all hot objects that are detected with the amount of objects detected
 typedef struct {
-    PerceptedObj* objs;
+    PerceivedObj* objs;
     uint8_t objCount;
-} AllPerceptedObjs;
+} AllPerceivedObjs;
 
 /**
  * Takes an image and returns the position of dangerousely hot things in the image.
  * The size of the hot objects is also returned for priority reasons in the final code.
  */
-AllPerceptedObjs processImage(const uint8_t image[][IMAGE_WIDTH]);
+AllPerceivedObjs processImage(const uint8_t image[][IMAGE_WIDTH]);
 
 #endif
