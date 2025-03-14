@@ -50,7 +50,7 @@
      * the found objects are sent to the M7 core in string format.
      */
     void loop() {
-        AllPerceptedObjs allObjs = processImage(testImage); // Calculate targets from image
+        AllPerceivedObjs allObjs = processImage(testImage); // Calculate targets from image
         
         char returnStr[676];
         for (uint8_t i = 0; i < allObjs.objCount; i++) { // Print all found objects
