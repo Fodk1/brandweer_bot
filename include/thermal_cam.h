@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
-#define IMAGE_HEIGHT 10
-#define IMAGE_WIDTH 12
+#define IMAGE_HEIGHT 24
+#define IMAGE_WIDTH 32
 
 typedef struct {
-    uint8_t image[24][32];
+    uint16_t image[24][32];
 } ImageWrapper;
 
 ImageWrapper getFrame();

@@ -1,9 +1,23 @@
 #ifdef CORE_CM7
   #include <RPC.h>
+
+  #include "thermal_cam.h"
   
     void setup() {
         Serial.begin(115200);
-        RPC.begin();
+        // RPC.begin();
+
+        while (!Serial);
+        delay(1000);
+
+        thermalCamInit();
+        // ImageWrapper frame = getFrame();
+        // for (uint8_t y = 0; y < IMAGE_HEIGHT; y++) {
+        //     for (uint8_t x = 0; x < IMAGE_WIDTH; x++) {
+        //         Serial.println(frame.image[y][x]);
+        //     }
+        //     Serial.println();
+        // }
     }
   
     /*
@@ -11,10 +25,10 @@
      * the objects calculated by the M4 core when they are availible
      */
     void loop() {
-        Serial.println("M7: Hello");
-        while (RPC.available()) { // Get the objects from the M4 core
-            Serial.write(RPC.read()); 
-        }  
+        // Serial.println("M7: Hello");
+        // while (RPC.available()) { // Get the objects from the M4 core
+        //     Serial.write(RPC.read()); 
+        // }  
         delay(1000);
     }
 #endif              
@@ -50,13 +64,13 @@
      * the found objects are sent to the M7 core in string format.
      */
     void loop() {
-        AllPerceivedObjs allObjs = processImage(testImage); // Calculate targets from image
+        // AllPerceivedObjs allObjs = processImage(testImage); // Calculate targets from image
         
-        char returnStr[676];
-        for (uint8_t i = 0; i < allObjs.objCount; i++) { // Print all found objects
-            sprintf(returnStr,"Obj %u: y = %f, x = %f, size = %u.", i, allObjs.objs[i].y, allObjs.objs[i].x, allObjs.objs[i].obj_size);
-            SerialRPC.println(returnStr); 
-        }
-        delay(3000);
+        // char returnStr[676];
+        // for (uint8_t i = 0; i < allObjs.objCount; i++) { // Print all found objects
+        //     sprintf(returnStr,"Obj %u: y = %f, x = %f, size = %u.", i, allObjs.objs[i].y, allObjs.objs[i].x, allObjs.objs[i].obj_size);
+        //     SerialRPC.println(returnStr); 
+        // }
+        // delay(3000);
     }
 #endif
