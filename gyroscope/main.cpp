@@ -20,7 +20,7 @@
 
 void setup() {
   Serial.begin(9600);
-  Wire.begin(21, 22);
+  Wire.begin();
 
   Wire.beginTransmission(MPU6050_ADDR);
   Wire.write(PWR_MGMT_1);
@@ -75,3 +75,19 @@ int16_t readSensor(byte reg) {
   
   return value;
 }
+
+int16_t getX( int16_t xValue)
+{
+  return ( readSensor(ACCEL_XOUT_H) / 131.0 );
+}
+
+int16_t getY( int16_t yValue)
+{
+  return ( readSensor(ACCEL_YOUT_H) / 131.0 );
+}
+
+int16_t getZ( int16_t zValue)
+{
+  return ( readSensor(ACCEL_ZOUT_H) / 131.0 );
+}
+
