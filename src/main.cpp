@@ -1,9 +1,19 @@
 #ifdef CORE_CM7
   #include <RPC.h>
-  
+  #include "turret_movement.h"
+
     void setup() {
         Serial.begin(115200);
+        turretInitXAxis(1, 0);
+        turretInitYAxis(6);
         RPC.begin();
+
+        for (size_t i = 0; i < 2; i++){
+            digitalWrite(LED_BUILTIN, 1);
+            delay(500);
+            digitalWrite(LED_BUILTIN, 0);
+            delay(500);
+        }
     }
   
     /*
@@ -14,7 +24,53 @@
         Serial.println("M7: Hello");
         while (RPC.available()) { // Get the objects from the M4 core
             Serial.write(RPC.read()); 
-        }  
+        }
+        turretSetXMovement(0.7);
+        delay(2000);
+        turretSetXMovement(0);
+        
+        delay(1000);
+
+        for (size_t i = 0; i < 18; i++)
+        {
+            turretSetYMovement(1);
+            delay(100);
+        }
+        
+        delay(1000);
+              
+        turretSetXMovement(-0.7);
+        delay(2000);
+        turretSetXMovement(0);
+
+        delay(1000);
+
+        for (size_t i = 0; i < 18; i++)
+        {
+            turretSetYMovement(-1);
+            delay(100);
+        }
+
+        delay(1000);
+
+        turretSetXMovement(0.7);
+        for (size_t i = 0; i < 18; i++)
+        {
+            turretSetYMovement(1);
+            delay(100);
+        }
+        turretSetXMovement(0);
+
+        delay(1000);
+
+        turretSetXMovement(-0.7);
+        for (size_t i = 0; i < 18; i++)
+        {
+            turretSetYMovement(-1);
+            delay(100);
+        }
+        turretSetXMovement(0);
+
         delay(1000);
     }
 #endif              
