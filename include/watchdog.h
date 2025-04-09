@@ -1,5 +1,5 @@
-#ifndef POWER_STATE_H
-#define POWER_STATE_H
+#ifndef WATCHDOG_H
+#define WATCHDOG_H
 
 /**
  * @brief Start watchdog timer that reset the whole system if timedout
