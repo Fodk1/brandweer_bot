@@ -10,12 +10,15 @@ extern "C" {
 #include "thermal_cam.h"
 
 #define CAM_SLAVE_ADDR 0x33
-#define REFRESH_RATE 2
 #define EMISSIVITY 0.95f
+#define REFRESH_RATE 8
 
 paramsMLX90640 mlxParams;
 uint16_t eeData[832];
 uint16_t frameData[834];
+
+uint16_t subpage0[834];
+uint16_t subpage1[834];
 
 void sendTwoBytes(uint16_t reg) {
     uint8_t regParts[2] = {
@@ -86,6 +89,51 @@ void MLX90640_I2CFreqSet(int freq) {
     Wire.setClock(freq);
 }
 
+uint8_t refreshRateToComm(float refreshRate) {
+    uint8_t firstDig = floor(refreshRate);
+
+    switch(firstDig) {
+        case 0:     return 0x00;
+        case 1:     return 0x01;
+        case 2:     return 0x02;
+        case 4:     return 0x03;
+        case 8:     return 0x04;
+        case 16:    return 0x05;
+        case 32:    return 0x06;
+        case 64:    return 0x07;
+        default:    return 0x02; // Return default
+    }
+}
+
+void updateSubpages() {
+    static unsigned long lastSubpage0 = 0;
+    static unsigned long lastSubpage1 = 0;
+
+    static bool firstCall = true;
+
+    unsigned long currTime = millis();
+
+    if (firstCall) { // First call, synchronise timers
+        MLX90640_SynchFrame(CAM_SLAVE_ADDR);
+        lastSubpage0 = currTime;
+        lastSubpage1 = currTime + REFRESH_RATE;
+
+        firstCall = false;
+    }
+    if (currTime > lastSubpage0 + 2 * REFRESH_RATE) { // New subpage0 availible
+        int test = MLX90640_GetFrameData(CAM_SLAVE_ADDR, subpage0);
+        lastSubpage0 = currTime;
+    }
+    if (currTime > lastSubpage1 + 2 * REFRESH_RATE) { // New subpage1 availible
+        unsigned long t = millis();
+        int test = MLX90640_GetFrameData(CAM_SLAVE_ADDR, subpage1);
+        unsigned long diff = millis() - t;
+        Serial.println(diff);
+
+        lastSubpage1 = currTime;
+    }
+}
+
 /**
  * Get an unprocessed frame from the thermal camera
  */
@@ -97,7 +145,7 @@ ImageWrapper getFrame() {
 
     while (retrievedSubpages < 2) {
         int subpage = MLX90640_GetFrameData(CAM_SLAVE_ADDR, frameData);
-        Serial.println(subpage);
+        // Serial.println(subpage);
 
         if (prevSubpage == subpage) continue;
         prevSubpage = subpage;
@@ -125,7 +173,8 @@ ImageWrapper getFrame() {
 
 void thermalCamInit() {
     MLX90640_I2CInit();
-    MLX90640_I2CFreqSet(400000);
+    MLX90640_I2CFreqSet(800000);
+    MLX90640_SetRefreshRate(CAM_SLAVE_ADDR, refreshRateToComm(REFRESH_RATE));
 
     delay(1000);
 

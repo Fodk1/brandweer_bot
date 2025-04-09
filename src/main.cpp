@@ -5,7 +5,7 @@
   
     void setup() {
         Serial.begin(115200);
-        // RPC.begin();
+        RPC.begin();
 
         while (!Serial);
         delay(1000);
@@ -29,7 +29,8 @@
         // while (RPC.available()) { // Get the objects from the M4 core
         //     Serial.write(RPC.read()); 
         // }  
-        delay(1000);
+        updateSubpages();
+        // delay(1000);
     }
 #endif              
 

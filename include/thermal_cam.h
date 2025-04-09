@@ -13,4 +13,6 @@ typedef struct {
 ImageWrapper getFrame();
 void thermalCamInit();
 
+void updateSubpages();
+
 #endif
