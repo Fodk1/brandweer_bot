@@ -98,12 +98,14 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
         Wire.endTransmission(false);
 
         Wire.requestFrom((int) slaveAddr, (int) (amount * 2));
-        for (uint8_t i = 0; i < amount; i++) {
-            if (Wire.available() < 2) return -1; // Not enough data...
-
-            uint16_t dataIndex = chunk * READ_BUFFER_16 + i;
-            data[dataIndex] = (uint16_t) (Wire.read() << 8);    // Read MSB
-            data[dataIndex] |= (uint16_t) Wire.read();          // Read LSB
+        uint8_t readData = 0;
+        while (readData < amount) {
+            if (Wire.available() >= 2) {
+                uint16_t dataIndex = chunk * READ_BUFFER_16 + readData;
+                data[dataIndex] = (uint16_t) (Wire.read() << 8);    // Read MSB
+                data[dataIndex] |= (uint16_t) Wire.read();          // Read LSB
+                readData++;
+            }
         }
     }
     return 0;
