@@ -11,13 +11,6 @@
         delay(1000);
 
         thermalCamInit();
-        ImageWrapper frame = getFrame();
-        for (uint8_t y = 0; y < IMAGE_HEIGHT; y++) {
-            for (uint8_t x = 0; x < IMAGE_WIDTH; x++) {
-                Serial.println(frame.image[y][x]);
-            }
-            Serial.println();
-        }
     }
   
     /*
@@ -30,6 +23,17 @@
         //     Serial.write(RPC.read()); 
         // }  
         // delay(1000);
+
+        static int ledMode = 0;
+
+        ImageWrapper frame;
+        getFrame(&frame);
+        // // for (int i = 0; i < 32; i++) {
+        // //     Serial.println(frame.image[0][i]);
+        // // }
+        // Serial.println("Frame done ^\n\n");
+        digitalWrite(LED_BUILTIN, ledMode);
+        ledMode = !ledMode;
     }
 #endif              
 

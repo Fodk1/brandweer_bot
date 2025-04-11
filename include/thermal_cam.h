@@ -10,7 +10,7 @@ typedef struct {
     uint16_t image[24][32];
 } ImageWrapper;
 
-ImageWrapper getFrame();
+void getFrame(ImageWrapper* frame);
 void thermalCamInit();
 
 void updateSubpages();
