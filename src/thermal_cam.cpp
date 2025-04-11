@@ -157,37 +157,6 @@ void getFrame(ImageWrapper* frame) {
         }
         retrievedSubpages++;
     }
-
-    // ImageWrapper frame;
-    // int prevSubpage = -1;
-    // int retrievedSubpages = 0;
-
-    // while (retrievedSubpages < 2) {
-    //     int subpage = MLX90640_GetFrameData(CAM_SLAVE_ADDR, frameData);
-    //     Serial.println(subpage);
-
-    //     if (prevSubpage == subpage) continue;
-    //     prevSubpage = subpage;
-
-    //     float Ta = MLX90640_GetTa(frameData, &mlxParams);
-    //     float tempFrame[IMAGE_HEIGHT * IMAGE_WIDTH];
-    //     MLX90640_CalculateTo(frameData, &mlxParams, EMISSIVITY, Ta, tempFrame);
-
-    //     for (uint16_t i = 0; i < IMAGE_WIDTH * IMAGE_HEIGHT; i++) {
-    //         uint16_t y = floor(i / IMAGE_WIDTH);
-    //         uint16_t x = i % IMAGE_WIDTH;
-
-    //         // Store in Chess pattern from subpage
-    //         if (subpage == 0 && ((y & 1) == (x & 1))) {
-    //             frame.image[y][x] = tempFrame[i];
-    //         }
-    //         if (subpage == 1 && ((y & 1) != (x & 1))) {
-    //             frame.image[y][x] = tempFrame[i];
-    //         }
-    //     }
-    //     retrievedSubpages++;
-    // }
-    // return frame;
 }
 
 void thermalCamInit() {
