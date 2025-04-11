@@ -74,6 +74,24 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
         data[i] = readData;
     }
     return 0;
+
+    // Wire.beginTransmission(slaveAddr);
+    // Wire.write(startAddress >> 8);
+    // Wire.write(startAddress & 0xFF);
+    // int result = Wire.endTransmission(false);  // Repeated start
+
+    // if (result != 0) {
+    //     return -1;
+    // }
+
+    // Wire.requestFrom((int)slaveAddr, (int)(nMemAddressRead * 2));  // Request all bytes at once
+    // for (int i = 0; i < nMemAddressRead; i++) {
+    //     if (Wire.available() < 2) {
+    //         return -2;  // Not enough data
+    //     }
+    //     data[i] = ((uint16_t)Wire.read() << 8) | Wire.read();
+    // }
+    // return 0;
 }
 
 int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data) {
@@ -102,35 +120,6 @@ uint8_t refreshRateToComm(float refreshRate) {
         case 32:    return 0x06;
         case 64:    return 0x07;
         default:    return 0x02; // Return default
-    }
-}
-
-void updateSubpages() {
-    static unsigned long lastSubpage0 = 0;
-    static unsigned long lastSubpage1 = 0;
-
-    static bool firstCall = true;
-
-    unsigned long currTime = millis();
-
-    if (firstCall) { // First call, synchronise timers
-        MLX90640_SynchFrame(CAM_SLAVE_ADDR);
-        lastSubpage0 = currTime;
-        lastSubpage1 = currTime + REFRESH_RATE;
-
-        firstCall = false;
-    }
-    if (currTime > lastSubpage0 + 2 * REFRESH_RATE) { // New subpage0 availible
-        int test = MLX90640_GetFrameData(CAM_SLAVE_ADDR, subpage0);
-        lastSubpage0 = currTime;
-    }
-    if (currTime > lastSubpage1 + 2 * REFRESH_RATE) { // New subpage1 availible
-        unsigned long t = millis();
-        int test = MLX90640_GetFrameData(CAM_SLAVE_ADDR, subpage1);
-        unsigned long diff = millis() - t;
-        Serial.println(diff);
-
-        lastSubpage1 = currTime;
     }
 }
 
@@ -180,6 +169,8 @@ void thermalCamInit() {
 
     MLX90640_DumpEE(CAM_SLAVE_ADDR, eeData);
     MLX90640_ExtractParameters(eeData, &mlxParams);
+
+    delay(100);
 }
 
 void thermalCamTerminate() {

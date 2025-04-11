@@ -11,13 +11,13 @@
         delay(1000);
 
         thermalCamInit();
-        // ImageWrapper frame = getFrame();
-        // for (uint8_t y = 0; y < IMAGE_HEIGHT; y++) {
-        //     for (uint8_t x = 0; x < IMAGE_WIDTH; x++) {
-        //         Serial.println(frame.image[y][x]);
-        //     }
-        //     Serial.println();
-        // }
+        ImageWrapper frame = getFrame();
+        for (uint8_t y = 0; y < IMAGE_HEIGHT; y++) {
+            for (uint8_t x = 0; x < IMAGE_WIDTH; x++) {
+                Serial.println(frame.image[y][x]);
+            }
+            Serial.println();
+        }
     }
   
     /*
@@ -29,7 +29,6 @@
         // while (RPC.available()) { // Get the objects from the M4 core
         //     Serial.write(RPC.read()); 
         // }  
-        updateSubpages();
         // delay(1000);
     }
 #endif              
