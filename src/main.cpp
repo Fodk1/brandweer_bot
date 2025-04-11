@@ -1,11 +1,20 @@
-#define CORE_CM7 1
+// #define CORE_CM7 1
 #ifdef CORE_CM7
-  #include <RPC.h>
-  #include "timer_interrupt.h"
+    #include <RPC.h>
+    #include "timer_interrupt.h"
+
+    void callback(){
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
 
     void setup() {
         Serial.begin(115200);
         RPC.begin();
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(1000);
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(1000);
+        startTimer(1000, callback);
     }
   
     void loop() {
