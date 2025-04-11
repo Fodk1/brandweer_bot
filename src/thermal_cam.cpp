@@ -12,6 +12,7 @@ extern "C" {
 #define CAM_SLAVE_ADDR 0x33
 #define REFRESH_RATE 2
 #define EMISSIVITY 0.95f
+#define READ_BUFFER_16 64
 
 paramsMLX90640 mlxParams;
 uint16_t eeData[832];
@@ -72,16 +73,38 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
     // }
     // return 0;
 
-    Wire.beginTransmission((int) slaveAddr);
-    sendTwoBytes(startAddress); // Select register
-    Wire.endTransmission(false);
+    // Wire.beginTransmission((int) slaveAddr);
+    // sendTwoBytes(startAddress); // Select register
+    // Wire.endTransmission(false);
 
-    Wire.requestFrom((int) slaveAddr, (int) (nMemAddressRead * 2));
-    for (uint16_t i = 0; i < nMemAddressRead; i++) {
-        
-        if (Wire.available() < 2) return -1; // Not enough data...
-        data[i] = (uint16_t) (Wire.read() << 8);    // Read MSB
-        data[i] |= (uint16_t) Wire.read();          // Read LSB
+    // Wire.requestFrom((int) slaveAddr, (int) (nMemAddressRead * 2));
+    // for (uint16_t i = 0; i < nMemAddressRead; i++) {
+
+    //     if (Wire.available() < 2) return -1; // Not enough data...
+    //     data[i] = (uint16_t) (Wire.read() << 8);    // Read MSB
+    //     data[i] |= (uint16_t) Wire.read();          // Read LSB
+    // }
+    // return 0;
+
+    uint8_t chunks = floor(nMemAddressRead / READ_BUFFER_16);
+    uint8_t remaining = nMemAddressRead % READ_BUFFER_16;
+
+    // Read all chunks + the remaining 16-bit integers
+    for (uint8_t chunk = 0; chunk <= chunks; chunk++) {
+        uint8_t amount = chunk == chunks ? remaining : READ_BUFFER_16;
+
+        Wire.beginTransmission((int) slaveAddr);
+        sendTwoBytes(startAddress + chunk * READ_BUFFER_16); // Select register
+        Wire.endTransmission(false);
+
+        Wire.requestFrom((int) slaveAddr, (int) (amount * 2));
+        for (uint8_t i = 0; i < amount; i++) {
+            if (Wire.available() < 2) return -1; // Not enough data...
+
+            uint16_t dataIndex = chunk * READ_BUFFER_16 + i;
+            data[dataIndex] = (uint16_t) (Wire.read() << 8);    // Read MSB
+            data[dataIndex] |= (uint16_t) Wire.read();          // Read LSB
+        }
     }
     return 0;
 }
