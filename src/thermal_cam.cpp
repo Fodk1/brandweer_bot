@@ -10,15 +10,12 @@ extern "C" {
 #include "thermal_cam.h"
 
 #define CAM_SLAVE_ADDR 0x33
+#define REFRESH_RATE 2
 #define EMISSIVITY 0.95f
-#define REFRESH_RATE 8
 
 paramsMLX90640 mlxParams;
 uint16_t eeData[832];
 uint16_t frameData[834];
-
-uint16_t subpage0[834];
-uint16_t subpage1[834];
 
 void sendTwoBytes(uint16_t reg) {
     uint8_t regParts[2] = {
@@ -74,24 +71,6 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
         data[i] = readData;
     }
     return 0;
-
-    // Wire.beginTransmission(slaveAddr);
-    // Wire.write(startAddress >> 8);
-    // Wire.write(startAddress & 0xFF);
-    // int result = Wire.endTransmission(false);  // Repeated start
-
-    // if (result != 0) {
-    //     return -1;
-    // }
-
-    // Wire.requestFrom((int)slaveAddr, (int)(nMemAddressRead * 2));  // Request all bytes at once
-    // for (int i = 0; i < nMemAddressRead; i++) {
-    //     if (Wire.available() < 2) {
-    //         return -2;  // Not enough data
-    //     }
-    //     data[i] = ((uint16_t)Wire.read() << 8) | Wire.read();
-    // }
-    // return 0;
 }
 
 int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data) {
@@ -107,22 +86,6 @@ void MLX90640_I2CFreqSet(int freq) {
     Wire.setClock(freq);
 }
 
-uint8_t refreshRateToComm(float refreshRate) {
-    uint8_t firstDig = floor(refreshRate);
-
-    switch(firstDig) {
-        case 0:     return 0x00;
-        case 1:     return 0x01;
-        case 2:     return 0x02;
-        case 4:     return 0x03;
-        case 8:     return 0x04;
-        case 16:    return 0x05;
-        case 32:    return 0x06;
-        case 64:    return 0x07;
-        default:    return 0x02; // Return default
-    }
-}
-
 /**
  * Get an unprocessed frame from the thermal camera
  */
@@ -134,7 +97,7 @@ ImageWrapper getFrame() {
 
     while (retrievedSubpages < 2) {
         int subpage = MLX90640_GetFrameData(CAM_SLAVE_ADDR, frameData);
-        // Serial.println(subpage);
+        Serial.println(subpage);
 
         if (prevSubpage == subpage) continue;
         prevSubpage = subpage;
@@ -162,15 +125,14 @@ ImageWrapper getFrame() {
 
 void thermalCamInit() {
     MLX90640_I2CInit();
-    MLX90640_I2CFreqSet(800000);
-    MLX90640_SetRefreshRate(CAM_SLAVE_ADDR, refreshRateToComm(REFRESH_RATE));
+    MLX90640_I2CFreqSet(400000);
+
+    camWriteReg(CAM_SLAVE_ADDR, 0x800D, 0b0001100100000001);
 
     delay(1000);
 
     MLX90640_DumpEE(CAM_SLAVE_ADDR, eeData);
     MLX90640_ExtractParameters(eeData, &mlxParams);
-
-    delay(100);
 }
 
 void thermalCamTerminate() {
