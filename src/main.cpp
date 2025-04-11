@@ -1,38 +1,33 @@
 #ifdef CORE_CM7
     #include <RPC.h>
-    #include "watchdog.h"
-    #include "Portenta_H7_TimerInterrupt.h"
+    #include "rtos.h"
 
-    Portenta_H7_Timer ITimer0(TIM1);
+    using namespace rtos;
 
-    void callback(void){
-        for (size_t i = 0; i < 2; i++){
-            digitalWrite(LED_BUILTIN, 1);
-            delay(200);
-            digitalWrite(LED_BUILTIN, 0);
-            delay(200);
+    Thread led_thread;
+
+    void blinky() {
+        while (true) {
+            digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+            
+            ThisThread::sleep_for(500);
         }
     }
 
     void setup() {
         Serial.begin(115200);
         RPC.begin();
+        for (size_t i = 0; i < 3; i++){
+            digitalWrite(LED_BUILTIN, 1);
+            delay(200);
+            digitalWrite(LED_BUILTIN, 0);
+            delay(200);
+        }
 
-        // if(ITimer0.attachInterruptInterval(5000 * 1000, callback))
-            // digitalWrite(LED_BUILTIN, 1);
-
-
-        // init all systems
-        // startWatchdog(2000);        
+        led_thread.start(blinky);
     }
   
     void loop() {
-
-        // handle ble
-
-        // handle PID data
-
-        // feedWatchdog();
     }
 #endif
 
@@ -49,22 +44,8 @@
     void setup() {
         SerialRPC.begin();
 
-        // init all systems
-
     }
    
     void loop() {
-        // Scan environment
-        // found something? look at it with PID
-        
-        // go to sleep until intupted
-        // LowPower.standbyM4();
-
-        // for (size_t i = 0; i < 5; i++){
-        //     digitalWrite(LED_BUILTIN, 1);
-        //     delay(200);
-        //     digitalWrite(LED_BUILTIN, 0);
-        //     delay(200);
-        // }
     }
 #endif
