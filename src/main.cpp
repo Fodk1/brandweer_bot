@@ -28,10 +28,9 @@
 
         ImageWrapper frame;
         getFrame(&frame);
-        // // for (int i = 0; i < 32; i++) {
-        // //     Serial.println(frame.image[0][i]);
-        // // }
-        // Serial.println("Frame done ^\n\n");
+        // for (int i = 0; i < 32; i++) {
+        //     Serial.println(frame.image[0][i]);
+        // }
         digitalWrite(LED_BUILTIN, ledMode);
         ledMode = !ledMode;
     }

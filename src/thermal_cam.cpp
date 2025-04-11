@@ -10,7 +10,7 @@ extern "C" {
 #include "thermal_cam.h"
 
 #define CAM_SLAVE_ADDR 0x33
-#define REFRESH_RATE 16
+#define REFRESH_RATE 32
 #define EMISSIVITY 0.95f
 #define READ_BUFFER_16 32
 #define NONE -1
@@ -192,7 +192,7 @@ void getFrame(ImageWrapper* frame) {
 
 void thermalCamInit() {
     MLX90640_I2CInit();
-    MLX90640_I2CFreqSet(400000);
+    MLX90640_I2CFreqSet(1000000);
 
     MLX90640_I2CWrite(CAM_SLAVE_ADDR, 0x800D, 0b0001100100000001);
     MLX90640_SetRefreshRate(CAM_SLAVE_ADDR, toRefreshRateCommand(REFRESH_RATE));
