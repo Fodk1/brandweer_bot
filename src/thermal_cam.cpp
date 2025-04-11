@@ -62,6 +62,7 @@ void MLX90640_I2CInit() {
 
 int MLX90640_I2CGeneralReset() {
     Wire.end();
+    delay(5);
     Wire.begin();
     return 0;
 }
@@ -73,40 +74,59 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
     // }
     // return 0;
 
-    // Wire.beginTransmission((int) slaveAddr);
-    // sendTwoBytes(startAddress); // Select register
-    // Wire.endTransmission(false);
+    // uint8_t chunks = floor(nMemAddressRead / READ_BUFFER_16);
+    // uint8_t remaining = nMemAddressRead % READ_BUFFER_16;
 
-    // Wire.requestFrom((int) slaveAddr, (int) (nMemAddressRead * 2));
-    // for (uint16_t i = 0; i < nMemAddressRead; i++) {
+    // // Read all chunks + the remaining 16-bit integers
+    // for (uint8_t chunk = 0; chunk <= chunks; chunk++) {
+    //     uint8_t amount = chunk == chunks ? remaining : READ_BUFFER_16;
 
-    //     if (Wire.available() < 2) return -1; // Not enough data...
-    //     data[i] = (uint16_t) (Wire.read() << 8);    // Read MSB
-    //     data[i] |= (uint16_t) Wire.read();          // Read LSB
+    //     Wire.beginTransmission((int) slaveAddr);
+    //     sendTwoBytes(startAddress + chunk * READ_BUFFER_16); // Select register
+    //     Wire.endTransmission(false);
+
+    //     Wire.requestFrom((int) slaveAddr, (int) (amount * 2));
+    //     uint8_t readData = 0;
+    //     while (readData < amount) {
+    //         if (Wire.available() >= 2) {
+    //             uint16_t dataIndex = chunk * READ_BUFFER_16 + readData;
+    //             data[dataIndex] = (uint16_t) (Wire.read() << 8);    // Read MSB
+    //             data[dataIndex] |= (uint16_t) Wire.read();          // Read LSB
+    //             readData++;
+    //         }
+    //     }
     // }
     // return 0;
 
-    uint8_t chunks = floor(nMemAddressRead / READ_BUFFER_16);
-    uint8_t remaining = nMemAddressRead % READ_BUFFER_16;
+    uint16_t remaining = nMemAddressRead;
+    uint16_t addr = startAddress;
 
-    // Read all chunks + the remaining 16-bit integers
-    for (uint8_t chunk = 0; chunk <= chunks; chunk++) {
-        uint8_t amount = chunk == chunks ? remaining : READ_BUFFER_16;
+    while (remaining > 0) {
+        uint8_t readCount = remaining > READ_BUFFER_16 ? READ_BUFFER_16 : remaining;
 
-        Wire.beginTransmission((int) slaveAddr);
-        sendTwoBytes(startAddress + chunk * READ_BUFFER_16); // Select register
-        Wire.endTransmission(false);
-
-        Wire.requestFrom((int) slaveAddr, (int) (amount * 2));
-        uint8_t readData = 0;
-        while (readData < amount) {
-            if (Wire.available() >= 2) {
-                uint16_t dataIndex = chunk * READ_BUFFER_16 + readData;
-                data[dataIndex] = (uint16_t) (Wire.read() << 8);    // Read MSB
-                data[dataIndex] |= (uint16_t) Wire.read();          // Read LSB
-                readData++;
-            }
+        Wire.beginTransmission(slaveAddr);
+        sendTwoBytes(addr);
+        if (Wire.endTransmission(false) != 0) {
+            Serial.println("I2C write failed");
+            return -1;
         }
+
+        uint8_t bytesToRead = readCount * 2;
+        uint8_t bytesReceived = Wire.requestFrom((int)slaveAddr, (int)bytesToRead);
+        if (bytesReceived != bytesToRead) {
+            Serial.print("I2C read error: expected ");
+            Serial.print(bytesToRead);
+            Serial.print(" bytes, got ");
+            Serial.println(bytesReceived);
+            return -2;
+        }
+
+        for (uint8_t i = 0; i < readCount; i++) {
+            data[(addr - startAddress) + i] = ((uint16_t)Wire.read() << 8) | Wire.read();
+        }
+
+        addr += readCount;
+        remaining -= readCount;
     }
     return 0;
 }
