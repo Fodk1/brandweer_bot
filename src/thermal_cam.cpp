@@ -66,9 +66,22 @@ int MLX90640_I2CGeneralReset() {
 }
 
 int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data) {
+    // for (uint16_t i = 0; i < nMemAddressRead; i++) {
+    //     uint16_t readData = camReadReg(slaveAddr, startAddress + i);
+    //     data[i] = readData;
+    // }
+    // return 0;
+
+    Wire.beginTransmission((int) slaveAddr);
+    sendTwoBytes(startAddress); // Select register
+    Wire.endTransmission(false);
+
+    Wire.requestFrom((int) slaveAddr, (int) (nMemAddressRead * 2));
     for (uint16_t i = 0; i < nMemAddressRead; i++) {
-        uint16_t readData = camReadReg(slaveAddr, startAddress + i);
-        data[i] = readData;
+        
+        if (Wire.available() < 2) return -1; // Not enough data...
+        data[i] = (uint16_t) (Wire.read() << 8);    // Read MSB
+        data[i] |= (uint16_t) Wire.read();          // Read LSB
     }
     return 0;
 }
