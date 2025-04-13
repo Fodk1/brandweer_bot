@@ -2,10 +2,26 @@
 
 #ifdef CORE_CM7
     #include <RPC.h>
+    #include "rtos.h"
+    
     #include "gyro.h"
+    #include "watchdog.h"
     #include "turretMovement.h"
+    #include "timerInterrupt.h"
+
+    using namespace rtos;
   
-    float startPos;
+    #define START_SERVO_FLAG 0x01
+
+    Thread servoThread;
+    EventFlags flags;
+
+    void scan();
+    void testServo();
+    void ISR(){
+        flags.set(START_SERVO_FLAG);
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
 
     void setup() {
         Serial.begin(115200);
@@ -15,7 +31,6 @@
         turretInitYAxis(6);
 
         gyroInit();
-        startPos = getXAxis();
 
         for (size_t i = 0; i < 2; i++){
             digitalWrite(LED_BUILTIN, 1);
@@ -23,20 +38,51 @@
             digitalWrite(LED_BUILTIN, 0);
             delay(200);
         }
+        
+        startTimer(5000, ISR);
+        
+        startWatchdog(2000);
+        servoThread.start(testServo);
     }
   
     void loop() {
-        if (getXAxis() > startPos + 360)
-            turretSetXMovement(0);
-        else
-            turretSetXMovement(-0.5);
-            
-        if (getXAxis() > startPos + 180)
-            turretSetYMovement(-0.1);
-        else 
-            turretSetYMovement(0.1);
+        gyroUpdate();
+        feedWatchdog();
+        delay(100);
+    }
 
-        update();
+    
+    void scan(){
+        float startPos = getXAxis();
+
+        while (getXAxis() < startPos + 360)
+            turretSetXMovement(-0.5);
+        
+        turretSetXMovement(0);
+    }
+
+    void testServo(){
+        while (true) {
+            flags.wait_any(START_SERVO_FLAG, osWaitForever, false);
+
+            turretSetXMovement(0.4);
+            for (size_t i = 0; i < 45; i++)
+            {
+                turretSetYMovement(0.1);
+                ThisThread::sleep_for(30);
+            }
+            turretSetXMovement(-0.4);
+
+            for (size_t i = 0; i < 45; i++)
+            {
+                turretSetYMovement(-0.1);
+                ThisThread::sleep_for(30);
+            }
+
+            turretSetXMovement(0);
+
+            flags.clear(START_SERVO_FLAG);
+        }
     }
 
 #endif              
@@ -45,17 +91,20 @@
     #include <RPC.h>
 
     extern "C" {
-        #include "image_processing.h"
+        // #include "imageProcessing.h"
     }
  
     #define SerialRPC RPC
-
     
     void setup() {
         SerialRPC.begin();
+        // thermalCamInit();
     }
   
     void loop() {
-
+        // ImageWrapper frame;
+        // getFrame(&frame);
+        // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
+    
 #endif

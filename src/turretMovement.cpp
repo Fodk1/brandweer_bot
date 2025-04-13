@@ -26,9 +26,9 @@ void turretSetXMovement(float move){
 
     digitalWrite(DIR_PIN, move > 0);
 
-    uint16_t speed = (uint8_t) abs(move * 255.0);
+    uint16_t speed = abs(move) * 180 + 75; // everything bellow a pwm of 75/255 does not work.
     
-    if (speed < 10)
+    if (speed < 78)
         speed = 0;
 
     analogWrite(EN_PIN, speed);

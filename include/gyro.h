@@ -5,6 +5,6 @@ void gyroInit();
 
 float getXAxis();
 
-void update();
+void gyroUpdate();
 
 #endif

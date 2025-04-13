@@ -63,7 +63,7 @@ float getXAxis() {
     return xRotation;
 }
 
-void update(){
+void gyroUpdate(){
     static long prevUpdate = 0;
     long currentTime = millis();
     float elapsedTime = (currentTime - prevUpdate) / 1000.0;

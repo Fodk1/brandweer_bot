@@ -3,8 +3,7 @@
 
 #include <stdint.h>
 
-#define IMAGE_HEIGHT 10
-#define IMAGE_WIDTH 12
+#include "thermalCam.h"
 
 // Object that is discovered to be hot by the perception unit
 typedef struct {

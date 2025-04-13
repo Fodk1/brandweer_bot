@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "image_processing.h"
+#include "imageProcessing.h"
 
 #define CRITICAL_TEMP 100
 #define NONE -1
