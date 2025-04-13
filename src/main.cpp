@@ -4,10 +4,10 @@
     #include <RPC.h>
     #include "rtos.h"
     
-    #include "gyro.h"
     #include "watchdog.h"
     #include "turretMovement.h"
     #include "timerInterrupt.h"
+    #include "sleep.h"
 
     using namespace rtos;
   
@@ -26,39 +26,35 @@
     void setup() {
         Serial.begin(115200);
         RPC.begin();
+        __HAL_RCC_HSEM_CLK_ENABLE();
 
         turretInitXAxis(1, 0);
         turretInitYAxis(6);
 
-        gyroInit();
 
-        for (size_t i = 0; i < 2; i++){
-            digitalWrite(LED_BUILTIN, 1);
-            delay(200);
-            digitalWrite(LED_BUILTIN, 0);
-            delay(200);
-        }
+        // delay(3000);
+
+        // startTimer(5000, ISR);
         
-        startTimer(5000, ISR);
-        
-        startWatchdog(2000);
-        servoThread.start(testServo);
+        // startWatchdog(2000);
+        // servoThread.start(testServo);
     }
   
     void loop() {
-        gyroUpdate();
-        feedWatchdog();
-        delay(100);
+
+        // feedWatchdog();
+        delay(1000);
+        wakeUp();
     }
 
     
     void scan(){
-        float startPos = getXAxis();
+        // float startPos = getXAxis();
 
-        while (getXAxis() < startPos + 360)
-            turretSetXMovement(-0.5);
+        // while (getXAxis() < startPos + 360)
+        //     turretSetXMovement(-0.5);
         
-        turretSetXMovement(0);
+        // turretSetXMovement(0);
     }
 
     void testServo(){
@@ -90,21 +86,31 @@
 #ifdef CORE_CM4    
     #include <RPC.h>
 
-    extern "C" {
-        // #include "imageProcessing.h"
-    }
+    #include "thermalCam.h"
+    #include "gyro.h"
+    #include "sleep.h"
  
     #define SerialRPC RPC
     
     void setup() {
         SerialRPC.begin();
+        // gyroInit();
         // thermalCamInit();
+        for (size_t i = 0; i < 5; i++){
+            digitalWrite(LED_BUILTIN, 1);
+            delay(200);
+            digitalWrite(LED_BUILTIN, 0);
+            delay(200);
+        }
     }
   
     void loop() {
+        enterStopmode();
         // ImageWrapper frame;
         // getFrame(&frame);
-        // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(100);
+        // gyroUpdate();
     }
     
 #endif
