@@ -26,8 +26,8 @@
 
         static int ledMode = 0;
 
-        ImageWrapper frame;
-        getFrame(&frame);
+        uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH];
+        getFrame(frame);
         // for (int i = 0; i < 32; i++) {
         //     Serial.println(frame.image[0][i]);
         // }

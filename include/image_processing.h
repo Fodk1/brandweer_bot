@@ -22,6 +22,6 @@ typedef struct {
  * Takes an image and returns the position of dangerousely hot things in the image.
  * The size of the hot objects is also returned for priority reasons in the final code.
  */
-AllPerceivedObjs processImage(const uint8_t image[][IMAGE_WIDTH]);
+AllPerceivedObjs processImage(const uint16_t image[][IMAGE_WIDTH]);
 
 #endif

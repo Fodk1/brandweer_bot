@@ -32,7 +32,7 @@ PixPos ppsPop(PixPos* stack, uint8_t* sp) {
  * Checks if there is a hot object at a certain pixel, 
  * if there is one it maps the entire object with the current object ID in posState
  */
-void findObj(const uint8_t image[][IMAGE_WIDTH], uint8_t posState[][IMAGE_WIDTH], PixPos startPos, uint8_t* objID) {
+void findObj(const uint16_t image[][IMAGE_WIDTH], uint8_t posState[][IMAGE_WIDTH], PixPos startPos, uint8_t* objID) {
 
     // Only handle pixel if it is on a hot object
     if (image[startPos.y][startPos.x] < CRITICAL_TEMP) return;
@@ -108,7 +108,7 @@ PerceivedObj* getObjData(const uint8_t posState[][IMAGE_WIDTH], uint8_t objsInSi
     return perceivedObj;
 }
 
-AllPerceivedObjs processImage(const uint8_t image[][IMAGE_WIDTH]) {
+AllPerceivedObjs processImage(const uint16_t image[][IMAGE_WIDTH]) {
     // Array with the state of each position (if it has already been mapped or not)
     uint8_t posState[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
     uint8_t currObjID = 1;
