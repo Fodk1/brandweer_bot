@@ -1,14 +1,14 @@
 #include <Bluepad32.h>
 #include "motionPlatform.h"
 
-#define MOTOR1_DIR_PIN 16
+#define MOTOR1_DIR_PIN A3
 #define MOTOR1_SPEED_PIN D2
-#define MOTOR2_DIR_PIN 17
+#define MOTOR2_DIR_PIN A4
 #define MOTOR2_SPEED_PIN D3
 #define MOTOR3_DIR_PIN D20
 #define MOTOR3_SPEED_PIN D4
-#define MOTOR4_DIR_PIN 19
-#define MOTOR4_SPEED_PIN D5
+#define MOTOR4_DIR_PIN D21
+#define MOTOR4_SPEED_PIN D2
 
 // Movement test durations
 const int MOVE_DURATION = 2000;  // Duration for each movement test (ms)
