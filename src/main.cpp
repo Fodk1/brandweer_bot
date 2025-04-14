@@ -1,123 +1,125 @@
-#define CORE_CM7 1 
+#include <RPC.h>
+#include "rtos.h"
 
-#ifdef CORE_CM7
-    #include <RPC.h>
-    #include "rtos.h"
+#include "watchdog.h"
+#include "turretMovement.h"
+#include "timerInterrupt.h"
+#include "motionPlatform.h"
+// #include "sleep.h"
+
+using namespace rtos;
+
+#define START_SERVO_FLAG 0x01
+
+#define MOTOR1_DIR_PIN A3
+#define MOTOR1_SPEED_PIN D2
+#define MOTOR2_DIR_PIN A4
+#define MOTOR2_SPEED_PIN D3
+#define MOTOR3_DIR_PIN D20
+#define MOTOR3_SPEED_PIN D4
+#define MOTOR4_DIR_PIN D21
+#define MOTOR4_SPEED_PIN D2
+
+MotionControl motionControl(
+    MOTOR1_DIR_PIN, MOTOR1_SPEED_PIN,
+    MOTOR2_DIR_PIN, MOTOR2_SPEED_PIN,
+    MOTOR3_DIR_PIN, MOTOR3_SPEED_PIN,
+    MOTOR4_DIR_PIN, MOTOR4_SPEED_PIN
+);
+
+Thread servoThread;
+Thread movementThread;
+EventFlags flags;
+
+void scan();
+void testServo();
+void testMovement();
+void ISR(){
+    flags.set(START_SERVO_FLAG);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
+void setup() {
+    Serial.begin(115200);
+    RPC.begin();
+
+    // __HAL_RCC_HSEM_CLK_ENABLE();
+    // HAL_HSEM_ActivateNotification(HSEM_ID_0); 
+
+    turretInitXAxis(1, 0);
+    turretInitYAxis(6);
+    motionControl.begin();
+
+    for (size_t i = 0; i < 5; i++){
+        digitalWrite(LED_BUILTIN, 1);
+        delay(200);
+        digitalWrite(LED_BUILTIN, 0);
+        delay(200);
+    }
+
+    startTimer(5000, ISR);
     
-    #include "watchdog.h"
-    #include "turretMovement.h"
-    #include "timerInterrupt.h"
-    #include "motionPlatform.h"
-    // #include "sleep.h"
+    startWatchdog(2000);
+    servoThread.start(testServo);
+    movementThread.start(testMovement);
+}
 
-    using namespace rtos;
-  
-    #define START_SERVO_FLAG 0x01
+void loop() {
+    feedWatchdog();
+}
 
-    Thread servoThread;
-    EventFlags flags;
 
-    void scan();
-    void testServo();
-    void ISR(){
-        flags.set(START_SERVO_FLAG);
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    }
+void scan(){
+    // float startPos = getXAxis();
 
-    void setup() {
-        Serial.begin(115200);
-        RPC.begin();
-
-        // __HAL_RCC_HSEM_CLK_ENABLE();
-        // HAL_HSEM_ActivateNotification(HSEM_ID_0); 
-
-        turretInitXAxis(1, 0);
-        turretInitYAxis(6);
-
-        for (size_t i = 0; i < 5; i++){
-            digitalWrite(LED_BUILTIN, 1);
-            delay(200);
-            digitalWrite(LED_BUILTIN, 0);
-            delay(200);
-        }
-
-        startTimer(5000, ISR);
-        
-        startWatchdog(2000);
-        servoThread.start(testServo);
-    }
-  
-    void loop() {
-
-        feedWatchdog();
-    }
-
+    // while (getXAxis() < startPos + 360)
+    //     turretSetXMovement(-0.5);
     
-    void scan(){
-        // float startPos = getXAxis();
+    // turretSetXMovement(0);
+}
 
-        // while (getXAxis() < startPos + 360)
-        //     turretSetXMovement(-0.5);
-        
-        // turretSetXMovement(0);
-    }
+void testMovement(){
+    motionControl.moveVector(0.5,0);
+    ThisThread::sleep_for(1000);
+    
+    motionControl.moveVector(-0.5,0);
+    ThisThread::sleep_for(1000);
 
-    void testServo(){
-        while (true) {
-            flags.wait_any(START_SERVO_FLAG, osWaitForever, false);
+    motionControl.moveVector(0,0.5);
+    ThisThread::sleep_for(1000);
 
-            turretSetXMovement(0.4);
-            for (size_t i = 0; i < 45; i++)
-            {
-                turretSetYMovement(0.1);
-                ThisThread::sleep_for(30);
-            }
-            turretSetXMovement(-0.4);
+    motionControl.moveVector(0,-0.5);
+    ThisThread::sleep_for(1000);
 
-            for (size_t i = 0; i < 45; i++)
-            {
-                turretSetYMovement(-0.1);
-                ThisThread::sleep_for(30);
-            }
-
-            turretSetXMovement(0);
-
-            flags.clear(START_SERVO_FLAG);
-        }
-    }
-
-#endif              
-
-#ifdef CORE_CM4    
-    #include <RPC.h>
-
-    #include "thermalCam.h"
-    #include "gyro.h"
-    // #include "sleep.h"
+    motionControl.stop();
+    ThisThread::sleep_for(1000);
  
-    #define SerialRPC RPC
-    
-    void setup() {
-        SerialRPC.begin();
-        // HAL_NVIC_SetPriority(HSEM1_IRQn, 0, 0);
-        // HAL_NVIC_EnableIRQ(HSEM1_IRQn);
-        
-        // gyroInit();
-        // thermalCamInit();
+    motionControl.moveVector(1,1);
+ 
+    ThisThread::sleep_for(1000);
+    motionControl.stop();
+}
+
+void testServo(){
+    while (true) {
+        flags.wait_any(START_SERVO_FLAG, osWaitForever, false);
+
+        turretSetXMovement(0.4);
+        for (size_t i = 0; i < 45; i++)
+        {
+            turretSetYMovement(0.1);
+            ThisThread::sleep_for(30);
+        }
+        turretSetXMovement(-0.4);
+
+        for (size_t i = 0; i < 45; i++)
+        {
+            turretSetYMovement(-0.1);
+            ThisThread::sleep_for(30);
+        }
+
+        turretSetXMovement(0);
+
+        flags.clear(START_SERVO_FLAG);
     }
-  
-    void loop() {
-        // enterStopmode();
-        // Serial.println("Start");
-        // ImageWrapper frame;
-        // getFrame(&frame);
-        // for (int i = 0; i < 32; i++) {
-        //     Serial.println(frame.image[0][i]);
-        // }
-        // gyroUpdate();
-        // Serial.println(getXAxis());
-        delay(100);
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    }
-    
-#endif
+}
