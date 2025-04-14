@@ -37,3 +37,23 @@ for (uint8_t i = 0; i < allObjs.objCount; i++) { // Iterate over found objects
     uint16_t size = obj.obj_size;   // The amount of pixels an object takes up
 }
 ```
+
+### thermal_cam.cpp
+
+the [thermal_cam.cpp](src\thermal_cam.cpp) module is used to cummunicate with the [MLX90640](https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90640) (thermal camera) via *I2C*.
+
+**API**
+
+The API exposes two functions:
+- `thermalCamInit()` which can be used to initialise the thermal camera and make it ready for communication, this function should be called in the setup of the system.
+- `getFrame()` which can be used to get a frame from the camera, timing for getting the frame is handled by the function itself.
+
+**usage**
+
+To get a frame the `getFrame()` function can simply be called passing a 2D buffer pointer as the first argument, the function will wait for the camera
+to produce a full frame which can take up to 62.5 ms depending on when the function was called.
+
+```cpp
+uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH];
+getFrame(frame); // Fill 2D frame buffer with data
+```
