@@ -7,7 +7,7 @@
     #include "watchdog.h"
     #include "turretMovement.h"
     #include "timerInterrupt.h"
-    #include "sleep.h"
+    // #include "sleep.h"
 
     using namespace rtos;
   
@@ -26,25 +26,28 @@
     void setup() {
         Serial.begin(115200);
         RPC.begin();
-        __HAL_RCC_HSEM_CLK_ENABLE();
+        // __HAL_RCC_HSEM_CLK_ENABLE();
+        // HAL_HSEM_ActivateNotification(HSEM_ID_0); 
 
         turretInitXAxis(1, 0);
         turretInitYAxis(6);
 
+        for (size_t i = 0; i < 5; i++){
+            digitalWrite(LED_BUILTIN, 1);
+            delay(200);
+            digitalWrite(LED_BUILTIN, 0);
+            delay(200);
+        }
 
-        // delay(3000);
-
-        // startTimer(5000, ISR);
+        startTimer(5000, ISR);
         
-        // startWatchdog(2000);
-        // servoThread.start(testServo);
+        startWatchdog(2000);
+        servoThread.start(testServo);
     }
   
     void loop() {
 
-        // feedWatchdog();
-        delay(1000);
-        wakeUp();
+        feedWatchdog();
     }
 
     
@@ -88,29 +91,31 @@
 
     #include "thermalCam.h"
     #include "gyro.h"
-    #include "sleep.h"
+    // #include "sleep.h"
  
     #define SerialRPC RPC
     
     void setup() {
         SerialRPC.begin();
+        // HAL_NVIC_SetPriority(HSEM1_IRQn, 0, 0);
+        // HAL_NVIC_EnableIRQ(HSEM1_IRQn);
+        
         // gyroInit();
         // thermalCamInit();
-        for (size_t i = 0; i < 5; i++){
-            digitalWrite(LED_BUILTIN, 1);
-            delay(200);
-            digitalWrite(LED_BUILTIN, 0);
-            delay(200);
-        }
     }
   
     void loop() {
-        enterStopmode();
+        // enterStopmode();
+        // Serial.println("Start");
         // ImageWrapper frame;
         // getFrame(&frame);
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-        delay(100);
+        // for (int i = 0; i < 32; i++) {
+        //     Serial.println(frame.image[0][i]);
+        // }
         // gyroUpdate();
+        // Serial.println(getXAxis());
+        delay(100);
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
     
 #endif
