@@ -19,6 +19,10 @@ paramsMLX90640 mlxParams;
 uint16_t eeData[832];
 uint16_t frameData[834];
 
+/**
+ * Send two bytes to the MLX90640, this could be used to select a 16-bit indexed memory address,
+ * or to change a 16-bit content of a register.
+ */
 void sendTwoBytes(uint16_t reg) {
     uint8_t regParts[2] = {
         (uint8_t) ((reg >> 8) & 0xFF),
@@ -61,12 +65,6 @@ int MLX90640_I2CGeneralReset() {
 }
 
 int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddressRead, uint16_t *data) {
-    // for (uint16_t i = 0; i < nMemAddressRead; i++) {
-    //     uint16_t readData = camReadReg(slaveAddr, startAddress + i);
-    //     data[i] = readData;
-    // }
-    // return 0;
-
     uint16_t remaining = nMemAddressRead;
     uint16_t addr = startAddress;
 
@@ -118,26 +116,17 @@ void MLX90640_I2CFreqSet(int freq) {
     Wire.setClock(freq);
 }
 
-/**
- * Get an unprocessed frame from the thermal camera
- */
-void readSubpages() {
-
-}
-
-void getFrame(ImageWrapper* frame) {
+void getFrame(uint16_t image[][IMAGE_WIDTH]) {
     
     int prevSubpage = -1;
     int retrievedSubpages = 0;
     
-    
     while (retrievedSubpages < 2) {
         MLX90640_SynchFrame(CAM_SLAVE_ADDR); // Wait for frame
         int subpage = MLX90640_GetFrameData(CAM_SLAVE_ADDR, frameData);
-        // Serial.println(subpage);
 
         if (prevSubpage == subpage) continue;
-        prevSubpage = subpage;
+        prevSubpage = subpage; // Next subpage is availible
 
         float Ta = MLX90640_GetTa(frameData, &mlxParams);
         float tempFrame[IMAGE_HEIGHT * IMAGE_WIDTH];
@@ -147,13 +136,12 @@ void getFrame(ImageWrapper* frame) {
             uint16_t y = floor(i / IMAGE_WIDTH);
             uint16_t x = i % IMAGE_WIDTH;
 
-            // Store in Chess pattern from subpage
-            if (subpage == 0 && ((y & 1) == (x & 1))) {
-                frame -> image[y][x] = tempFrame[i];
-            }
-            if (subpage == 1 && ((y & 1) != (x & 1))) {
-                frame -> image[y][x] = tempFrame[i];
-            }
+            // Merge subpages in the image in their corresponding patterns
+            if (subpage == 0 && ((y & 1) == (x & 1)))
+                image[y][x] = tempFrame[i];
+                
+            if (subpage == 1 && ((y & 1) != (x & 1)))
+                image[y][x] = tempFrame[i];
         }
         retrievedSubpages++;
     }
@@ -176,5 +164,5 @@ void thermalCamInit() {
 void thermalCamTerminate() {
     Wire.end();
 
-    // Todo: Turn off camera sensor?
+    // TODO: Turn off camera sensor?
 }
