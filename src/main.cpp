@@ -1,110 +1,108 @@
-// #define CORE_CM7 1 
+// Only runs on core: M7
+#include <Arduino.h>
+#include "rtos.h"
 
-#ifdef CORE_CM7
-    #include <RPC.h>
-    #include "rtos.h"
-    
-    #include "gyro.h"
-    #include "watchdog.h"
-    #include "turretMovement.h"
-    #include "timerInterrupt.h"
+#include "gyro.h"
+#include "watchdog.h"
+#include "turretMovement.h"
+#include "timerInterrupt.h"
+#include "thermalCam.h"
 
-    using namespace rtos;
-  
-    #define START_SERVO_FLAG 0x01
+using namespace rtos;
 
-    Thread servoThread;
-    EventFlags flags;
+#define START_SERVO_FLAG 0x01
 
-    void scan();
-    void testServo();
-    void ISR(){
-        flags.set(START_SERVO_FLAG);
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+enum {
+    SCAN_MODE,
+    TRACK_MODE
+};
+
+// Thread servoThread;
+EventFlags flags;
+
+// Buffer for frame captured by the thermal camera
+uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
+
+void scan();
+// void testServo();
+void ISR(){
+    flags.set(START_SERVO_FLAG);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+}
+
+void setup() {
+    Serial.begin(115200);
+
+    turretInitXAxis(1, 0);
+    turretInitYAxis(6);
+
+    gyroInit();
+
+    // Debug...
+    for (size_t i = 0; i < 2; i++){
+        digitalWrite(LED_BUILTIN, 1);
+        delay(200);
+        digitalWrite(LED_BUILTIN, 0);
+        delay(200);
     }
+    
+    startTimer(5000, ISR); // Debug...
+    
+    startWatchdog(2000); // Debug...
+}
 
-    void setup() {
-        Serial.begin(115200);
-        RPC.begin();
+void loop() {
+    // gyroUpdate();
+    feedWatchdog();
+    // delay(100);
 
-        turretInitXAxis(1, 0);
-        turretInitYAxis(6);
+    uint8_t currMode = SCAN_MODE;
 
-        gyroInit();
+    switch(currMode) {
+        case SCAN_MODE:
+            scan();
+            startTimer(5000, ISR); // Sleep for 5 seconds
+            break;
 
-        for (size_t i = 0; i < 2; i++){
-            digitalWrite(LED_BUILTIN, 1);
-            delay(200);
-            digitalWrite(LED_BUILTIN, 0);
-            delay(200);
-        }
+        case TRACK_MODE:
+            break;
+
+        default:
+            Serial.println("Unknown mode...");
+            exit(1);
+    }
+}
+
+
+void scan() {
+    float startPos = getXAxis();
+    while (getXAxis() < startPos + 360) {
         
-        startTimer(5000, ISR);
-        
-        startWatchdog(2000);
-        servoThread.start(testServo);
-    }
-  
-    void loop() {
-        gyroUpdate();
-        feedWatchdog();
-        delay(100);
-    }
-
-    
-    void scan(){
-        float startPos = getXAxis();
-
-        while (getXAxis() < startPos + 360)
-            turretSetXMovement(-0.5);
-        
-        turretSetXMovement(0);
-    }
-
-    void testServo(){
-        while (true) {
-            flags.wait_any(START_SERVO_FLAG, osWaitForever, false);
-
-            turretSetXMovement(0.4);
-            for (size_t i = 0; i < 45; i++)
-            {
-                turretSetYMovement(0.1);
-                ThisThread::sleep_for(30);
-            }
-            turretSetXMovement(-0.4);
-
-            for (size_t i = 0; i < 45; i++)
-            {
-                turretSetYMovement(-0.1);
-                ThisThread::sleep_for(30);
-            }
-
-            turretSetXMovement(0);
-
-            flags.clear(START_SERVO_FLAG);
-        }
-    }
-
-#endif              
-
-#ifdef CORE_CM4    
-    #include <RPC.h>
-
-    extern "C" {
-        // #include "imageProcessing.h"
-    }
- 
-    #define SerialRPC RPC
-    
-    void setup() {
-        SerialRPC.begin();
-        // thermalCamInit();
-    }
-  
-    void loop() {
-        // ImageWrapper frame;
-        // getFrame(&frame);
-        // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     }
     
-#endif
+    turretSetXMovement(0);
+}
+
+// void testServo(){
+//     while (true) {
+//         flags.wait_any(START_SERVO_FLAG, osWaitForever, false);
+
+//         turretSetXMovement(0.4);
+//         for (size_t i = 0; i < 45; i++)
+//         {
+//             turretSetYMovement(0.1);
+//             ThisThread::sleep_for(30);
+//         }
+//         turretSetXMovement(-0.4);
+
+//         for (size_t i = 0; i < 45; i++)
+//         {
+//             turretSetYMovement(-0.1);
+//             ThisThread::sleep_for(30);
+//         }
+
+//         turretSetXMovement(0);
+
+//         flags.clear(START_SERVO_FLAG);
+//     }
+// }
