@@ -21,14 +21,14 @@ enum {
     TRACK_MODE
 };
 
-// Thread servoThread;
+Thread systemThread;
 EventFlags flags;
 
 // Buffer for frame captured by the thermal camera
 uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
 
 bool scan();
-// void testServo();
+void systemUpdate();
 void ISR(){
     flags.set(START_SERVO_FLAG);
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
@@ -53,13 +53,11 @@ void setup() {
     startTimer(5000, ISR); // Debug...
     
     startWatchdog(2000); // Debug...
+
+    systemThread.start(systemUpdate);
 }
 
 void loop() {
-    // gyroUpdate();
-    feedWatchdog();
-    // delay(100);
-
     static uint8_t currMode = SCAN_MODE;
 
     switch(currMode) {
@@ -72,7 +70,8 @@ void loop() {
                 currMode = TRACK_MODE; // Hot object in frame, start tracking it
                 break;
             }
-            startTimer(5000, ISR); // Sleep for 5 seconds
+            delay(5000);
+            // startTimer(5000, ISR); // not Sleep for 5 seconds
             break;
 
         case TRACK_MODE:
@@ -88,6 +87,8 @@ void loop() {
 
 bool scan() {
     float startPos = getXAxis();
+    turretSetXMovement(-0.5);
+
     while (getXAxis() < startPos + 360) {
         getFrame(frame);
 
@@ -98,6 +99,13 @@ bool scan() {
     
     turretSetXMovement(0);
     return false; // No hot object detected
+}
+
+void systemUpdate(){
+    while(1){
+        gyroUpdate();
+        feedWatchdog();
+    }
 }
 
 // void testServo(){
