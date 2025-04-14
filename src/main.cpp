@@ -1,4 +1,4 @@
-// #define CORE_CM7 1 
+#define CORE_CM7 1 
 
 #ifdef CORE_CM7
     #include <RPC.h>
@@ -7,6 +7,7 @@
     #include "watchdog.h"
     #include "turretMovement.h"
     #include "timerInterrupt.h"
+    #include "motionPlatform.h"
     // #include "sleep.h"
 
     using namespace rtos;
@@ -26,6 +27,7 @@
     void setup() {
         Serial.begin(115200);
         RPC.begin();
+
         // __HAL_RCC_HSEM_CLK_ENABLE();
         // HAL_HSEM_ActivateNotification(HSEM_ID_0); 
 
