@@ -8,6 +8,10 @@
 #include "timerInterrupt.h"
 #include "thermalCam.h"
 
+extern "C" {
+    #include "imageProcessing.h"
+}
+
 using namespace rtos;
 
 #define START_SERVO_FLAG 0x01
@@ -23,7 +27,7 @@ EventFlags flags;
 // Buffer for frame captured by the thermal camera
 uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
 
-void scan();
+bool scan();
 // void testServo();
 void ISR(){
     flags.set(START_SERVO_FLAG);
@@ -56,15 +60,23 @@ void loop() {
     feedWatchdog();
     // delay(100);
 
-    uint8_t currMode = SCAN_MODE;
+    static uint8_t currMode = SCAN_MODE;
 
     switch(currMode) {
+        /*
+         * In Scan Mode; the BB will check for fires in a circle around it.
+         * If it finds an actice fire, it's mode will change to Scan Mode.
+         */
         case SCAN_MODE:
-            scan();
+            if (scan()) {
+                currMode = TRACK_MODE; // Hot object in frame, start tracking it
+                break;
+            }
             startTimer(5000, ISR); // Sleep for 5 seconds
             break;
 
         case TRACK_MODE:
+            Serial.println("Tracking!!!");
             break;
 
         default:
@@ -74,13 +86,18 @@ void loop() {
 }
 
 
-void scan() {
+bool scan() {
     float startPos = getXAxis();
     while (getXAxis() < startPos + 360) {
-        
+        getFrame(frame);
+
+        // Check if hot object is in frame
+        if (processImage(frame).objCount > 0) 
+            return true; // Hot object detected
     }
     
     turretSetXMovement(0);
+    return false; // No hot object detected
 }
 
 // void testServo(){
