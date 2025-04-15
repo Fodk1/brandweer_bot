@@ -96,12 +96,16 @@ bool scan() {
 bool track() {
     while (1)
     {
+        static unsigned long lastUsedFrame = 0;
         flags.wait_any(START_TRACK_FLAG, osWaitForever, false);
 
         flags.wait_any(NEW_FRAME_FLAG);
 
         AllPerceivedObjs allObjs = processImage(frame);
-        if (allObjs.objCount < 1){
+        if (allObjs.objCount > 0)
+            lastUsedFrame = millis();
+
+        if (millis() - lastUsedFrame > 5000) {
             flags.clear(START_TRACK_FLAG);
             turretSetXMovement(0);
             continue;
