@@ -10,6 +10,10 @@ typedef struct {
     uint16_t image[24][32];
 } ImageWrapper;
 
+/**
+ * @brief Update frame buffer sent in argument
+ * @param image 2D image buffer (IMAGE_HEIGHT x IMAGE_WIDTH)
+ */
 void getFrame(uint16_t image[][IMAGE_WIDTH]);
 void thermalCamInit();
 

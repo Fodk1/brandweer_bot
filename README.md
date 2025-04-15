@@ -36,6 +36,7 @@ for (uint8_t i = 0; i < allObjs.objCount; i++) { // Iterate over found objects
     float x = obj.x;                // X position of object
     uint16_t size = obj.obj_size;   // The amount of pixels an object takes up
 }
+free(allObjs.obj); // Make sure to free the memory after use
 ```
 
 ### thermal_cam.cpp

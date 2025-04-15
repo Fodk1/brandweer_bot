@@ -24,14 +24,18 @@ enum {
 Thread systemThread;
 EventFlags flags;
 
+// Current mode of the robot: SCAN_MODE = deteecting fires, TRACK_MODE = tracking fires
+uint8_t currMode = SCAN_MODE;
+
 // Buffer for frame captured by the thermal camera
 uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
+unsigned long lastFrameUpdate = 0;
 
 bool scan();
 void systemUpdate();
 void ISR(){
     flags.set(START_SERVO_FLAG);
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
 void setup() {
@@ -43,15 +47,10 @@ void setup() {
 
     thermalCamInit();
     gyroInit();
-    // Debug...
-    for (size_t i = 0; i < 2; i++){
-        digitalWrite(LED_BUILTIN, 1);
-        delay(200);
-        digitalWrite(LED_BUILTIN, 0);
-        delay(200);
-    }
     
-    // startTimer(5000, ISR); // Debug...
+    digitalWrite(LED_BUILTIN, LOW); // Debug
+
+    startTimer(5000, ISR); // Debug...
     
     startWatchdog(2000); // Debug...
 
@@ -59,8 +58,6 @@ void setup() {
 }
 
 void loop() {
-    static uint8_t currMode = SCAN_MODE;
-
     switch(currMode) {
         /*
          * In Scan Mode; the BB will check for fires in a circle around it.
@@ -71,12 +68,11 @@ void loop() {
                 currMode = TRACK_MODE; // Hot object in frame, start tracking it
                 break;
             }
-            delay(5000);    
-            // startTimer(5000, ISR); // not Sleep for 5 seconds
+            delay(5000); // TODO: Sleep for 5 sec instead...
             break;
 
         case TRACK_MODE:
-            digitalWrite(LED_BUILTIN, 1);
+            digitalWrite(LED_BUILTIN, HIGH);
             
             Serial.println("Tracking!!!");
             break;
@@ -87,28 +83,75 @@ void loop() {
     }
 }
 
-
+/**
+ * Scan around the robot using the x-axis rotation to detect fires
+ */
 bool scan() {
     float startPos = getXAxis();
     turretSetXMovement(-0.5);
 
+    bool hotObjFound = false;
     while (getXAxis() < startPos + 360) {
+        AllPerceivedObjs objs = processImage(frame);
+        free(objs.objs); // Actual objects are not needed, just the count
+        
         // Check if hot object is in frame
-        if (processImage(frame).objCount > 0){ 
-            turretSetXMovement(0);
-            return true; // Hot object detected
+        if (objs.objCount > 0) {
+            hotObjFound = true;
+            break;
         }
     }
-    
     turretSetXMovement(0);
-    return false; // No hot object detected
+    return hotObjFound;
 }
 
-void systemUpdate(){
-    while(1){
+/**
+ * Track a fire if one has been detected
+ */
+void track() {
+    unsigned long lastFrameUsed = lastFrameUpdate;
+
+    if (lastFrameUsed == lastFrameUpdate) 
+        return; // No new frame availible
+
+    AllPerceivedObjs allObjs = processImage(frame);
+    PerceivedObj* objs = allObjs.objs;
+
+    // Select biggest object to track (most hazardous)
+    PerceivedObj selObj;
+    for (uint8_t i = 0; i < allObjs.objCount; i++) {
+        static uint16_t currBiggest = 0;
+
+        if (objs[i].obj_size > currBiggest)
+            selObj = objs[i];
+    }
+    free(objs); // Other objs no longer needed
+
+    // Debug...
+    Serial.println("Curr Tracked obj:");
+    Serial.print("y = ");
+    Serial.println(selObj.y);
+    Serial.print("x = ");
+    Serial.println(selObj.x);
+    Serial.print("Size = ");
+    Serial.println(selObj.obj_size);
+
+    Serial.println();
+
+    // TODO: implement PID
+}
+
+/*
+ * Sensor reads for the scan mode
+ */
+void systemUpdate() {
+    while(true) {
         feedWatchdog();
-        gyroUpdate();
+
         getFrame(frame);
+        lastFrameUpdate = millis();
+        if (currMode == SCAN_MODE)
+            gyroUpdate(); // Gyro is not needed in track mode
     }
 }
 
