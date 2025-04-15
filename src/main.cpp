@@ -32,6 +32,7 @@ uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
 unsigned long lastFrameUpdate = 0;
 
 bool scan();
+bool track();
 void systemUpdate();
 void ISR(){
     flags.set(START_SERVO_FLAG);
@@ -81,9 +82,10 @@ void loop() {
             break;
 
         case TRACK_MODE:
-            digitalWrite(LED_BUILTIN, HIGH);
-            
-            Serial.println("Tracking!!!");
+            // digitalWrite(LED_BUILTIN, HIGH);
+            if (!track())
+                currMode = SCAN_MODE;
+            // Serial.println("Tracking!!!");
             break;
 
         default:
@@ -117,13 +119,21 @@ bool scan() {
 /**
  * Track a fire if one has been detected
  */
-void track() {
-    unsigned long lastFrameUsed = lastFrameUpdate;
+bool track() {
+    static unsigned long lastFrameUsed = 0;
 
     if (lastFrameUsed == lastFrameUpdate) 
-        return; // No new frame availible
+        return 1; // No new frame availible
+
+    lastFrameUsed = lastFrameUpdate;
 
     AllPerceivedObjs allObjs = processImage(frame);
+    if (allObjs.objCount < 1)
+        return 0;
+    
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug
+
+
     PerceivedObj* objs = allObjs.objs;
 
     // Select biggest object to track (most hazardous)
@@ -136,18 +146,22 @@ void track() {
     }
     free(objs); // Other objs no longer needed
 
-    // Debug...
-    Serial.println("Curr Tracked obj:");
-    Serial.print("y = ");
-    Serial.println(selObj.y);
-    Serial.print("x = ");
-    Serial.println(selObj.x);
-    Serial.print("Size = ");
-    Serial.println(selObj.obj_size);
+    
+    turretSetXMovement((12-selObj.y)/24);
 
-    Serial.println();
+    // Debug...
+    // Serial.println("Curr Tracked obj:");
+    // Serial.print("y = ");
+    // Serial.println(selObj.y);
+    // Serial.print("x = ");
+    // Serial.println(selObj.x);
+    // Serial.print("Size = ");
+    // Serial.println(selObj.obj_size);
+
+    // Serial.println();
 
     // TODO: implement PID
+    return 1;
 }
 
 /*
