@@ -43,14 +43,14 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
 
-    // Crash test...
-    for (uint8_t i = 0; i < 3; i++) {
-        static uint8_t state = 0;
+    // // Crash test...
+    // for (uint8_t i = 0; i < 3; i++) {
+    //     static uint8_t state = 0;
 
-        digitalWrite(LED_BUILTIN, state);
-        state = !state;
-        delay(200);
-    }
+    //     digitalWrite(LED_BUILTIN, state);
+    //     state = !state;
+    //     delay(200);
+    // }
     
     turretInitXAxis(1, 0);
     turretInitYAxis(6);
@@ -121,6 +121,7 @@ bool scan() {
  */
 bool track() {
     static unsigned long lastFrameUsed = 0;
+    static unsigned long lastObjectSeen = 0;
 
     if (lastFrameUsed == lastFrameUpdate) 
         return 1; // No new frame availible
@@ -128,11 +129,13 @@ bool track() {
     lastFrameUsed = lastFrameUpdate;
 
     AllPerceivedObjs allObjs = processImage(frame);
-    if (allObjs.objCount < 1)
-        return 0;
-    
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug
+    if (allObjs.objCount > 0)
+        lastObjectSeen = millis();
 
+    if (millis() - lastObjectSeen > 5000)
+        return false;
+    
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug...
 
     PerceivedObj* objs = allObjs.objs;
 
@@ -148,17 +151,6 @@ bool track() {
 
     
     turretSetXMovement((12-selObj.y)/24);
-
-    // Debug...
-    // Serial.println("Curr Tracked obj:");
-    // Serial.print("y = ");
-    // Serial.println(selObj.y);
-    // Serial.print("x = ");
-    // Serial.println(selObj.x);
-    // Serial.print("Size = ");
-    // Serial.println(selObj.obj_size);
-
-    // Serial.println();
 
     // TODO: implement PID
     return 1;
