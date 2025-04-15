@@ -96,8 +96,6 @@ bool scan() {
  * Track a fire if one has been detected
  */
 bool track() {
-    static PidController xpid(1,1,1, 12); 
-    static PidController ypid(1,1,1, 16); 
 
     while (1)
     {
@@ -121,26 +119,20 @@ bool track() {
 
         // Select biggest object to track (most hazardous)
         PerceivedObj selObj;
+        uint16_t currBiggest = 0;
         for (uint8_t i = 0; i < allObjs.objCount; i++) {
-            static uint16_t currBiggest = 0;
             
-            if (objs[i].obj_size > currBiggest)
-            selObj = objs[i];
-        }
-        free(objs); // Other objs no longer needed
-        
-        float x = selObj.y;
-        float y = selObj.x;
-
-        float xMove = xpid.pid(x, (millis() - lastUsedFrame)/1000);
-        float yMove = ypid.pid(y, (millis() - lastUsedFrame)/1000);
-
-        xMove /= 24;
-        yMove /= 32;
-
-        
+            if (objs[i].obj_size > currBiggest){
+                currBiggest = objs[i].obj_size;
+                selObj = objs[i];
+            }
+        }        
+        free(allObjs.objs);
 
         turretSetXMovement((selObj.y-12)/24);
+        turretSetYMovement((selObj.x-16)/32);
+
+        
     }        
 }
 
@@ -152,6 +144,19 @@ void systemUpdate() {
         feedWatchdog();
         
         getFrame(frame);
+
+        // for (size_t i = 0; i < 24; i++)
+        // {
+        //     for (size_t n = 0; n < 32; n++)
+        //     {
+        //         Serial.println(frame[i][n]);
+        //     }
+        //     Serial.println();
+        // }
+
+        // ThisThread::sleep_for(1000);
+        
+
         lastFrameUpdate = millis();
         flags.set(NEW_FRAME_FLAG);
 
