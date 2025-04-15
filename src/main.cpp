@@ -19,6 +19,8 @@ using namespace rtos;
 #define START_TRACK_FLAG 0B10
 #define NEW_FRAME_FLAG 0B100
 
+#define motorClamp(x) ({x > 1 ? 1 : (x < -1 ? -1 : x)})
+
 Thread systemThread;
 Thread scanThread;
 Thread trackThread;
@@ -63,7 +65,6 @@ void loop() {
     delay(1000);
 }
 
-
 /**
  * Scan around the robot using the x-axis rotation to detect fires
  */
@@ -96,8 +97,9 @@ bool scan() {
  * Track a fire if one has been detected
  */
 bool track() {
-    static PidController xpid(1,1,1, 12); 
-    static PidController ypid(1,1,1, 16); 
+    // X and Y are swapped because the camera is hung sideways
+    static PidController xpid(50,100,10, 0); 
+    static PidController ypid(50,100,10, 0); 
 
     while (1)
     {
@@ -115,8 +117,6 @@ bool track() {
             turretSetXMovement(0);
             continue;
         }
-
-
         PerceivedObj* objs = allObjs.objs;
 
         // Select biggest object to track (most hazardous)
@@ -129,18 +129,18 @@ bool track() {
         }
         free(objs); // Other objs no longer needed
         
-        float x = selObj.y;
-        float y = selObj.x;
+        // Adjust for camera rotation and map values to -1 to 1 range
+        float x = selObj.y / (IMAGE_HEIGHT / 2) - 1;
+        float y = selObj.x / (IMAGE_WIDTH / 2) - 1;
 
-        float xMove = xpid.pid(x, (millis() - lastUsedFrame)/1000);
-        float yMove = ypid.pid(y, (millis() - lastUsedFrame)/1000);
+        float xMove = xpid.pid(x, (millis() - lastUsedFrame) / 1000.0);
+        // float yMove = ypid.pid(y, (millis() - lastUsedFrame));
 
-        xMove /= 24;
-        yMove /= 32;
+        // Serial.println(y);
+        Serial.println(x);
+        Serial.println();
 
-        
-
-        turretSetXMovement((selObj.y-12)/24);
+        // turretSetXMovement((selObj.y-12)/24);
     }        
 }
 

@@ -123,7 +123,7 @@ void onCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic
       bool isLeft = (joystick == "L");
       
       // Process joystick input
-      handleJoystickInput(isLeft, x, y);
+      // handleJoystickInput(isLeft, x, y);
       
       // Send acknowledgment
       String response = "ACK:" + data;
@@ -141,7 +141,7 @@ void onCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic
       Serial.println(button);
       
       // Process button input
-      handleButtonInput(button);
+      // handleButtonInput(button);
       
       // Send acknowledgment
       String response = "ACK:" + data;
