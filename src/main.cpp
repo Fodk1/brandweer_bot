@@ -103,7 +103,8 @@ bool track() {
 
     while (1)
     {
-        static PidController xPID(50, 100, 30, 0.5);
+        static PidController xPID(0.2, 0.01, 0.03, 0);
+        static PidController yPID(0.5, 0.01, 0.03, 0);
 
         static unsigned long lastUsedFrame = 0;
         flags.wait_any(START_TRACK_FLAG, osWaitForever, false);
@@ -133,15 +134,15 @@ bool track() {
         }        
         free(allObjs.objs);
 
-        float timeStep = (millis() - lastUsedFrame) / 10000.0;
-        float x = (selObj.y / (IMAGE_HEIGHT / 2 - 1) - 1) * -1;
-        float y = selObj.x / (IMAGE_WIDTH / 2) - 1;
+        float timeStep = (millis() - lastUsedFrame) / 1000.0;
+        float x = ((selObj.y - (IMAGE_HEIGHT - 1) / 2.0f) / ((IMAGE_HEIGHT - 1) / 2.0f)) * -1;
+        float y = ((selObj.x - (IMAGE_WIDTH - 1) / 2.0f) / ((IMAGE_WIDTH - 1) / 2.0f)) * -1;
 
-        // Serial.println(x);
+        // Serial.println(yPID.pid(y, timeStep));
 
-        turretSetXMovement((xPID.pid(x, timeStep) / 500));
+        turretSetXMovement(xPID.pid(x, timeStep));
+        turretSetYMovement(yPID.pid(y, timeStep));
         // turretSetYMovement((selObj.x-16)/32);
-        // Serial.println(xPID.pid(x, timeStep) / 500);
 
         if (allObjs.objCount > 0)
             lastUsedFrame = millis();
