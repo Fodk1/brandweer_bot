@@ -14,9 +14,9 @@ extern "C" {
 
 using namespace rtos;
 
-#define START_SCAN_FLAG 0x01
-#define START_TRACK_FLAG 0x02
-#define NEW_FRAME_FLAG 0x03
+#define START_SCAN_FLAG 0B01
+#define START_TRACK_FLAG 0B10
+#define NEW_FRAME_FLAG 0B100
 
 Thread systemThread;
 Thread scanThread;
@@ -32,23 +32,14 @@ bool scan();
 bool track();
 void systemUpdate();
 void ISR(){
-    flags.set(START_SCAN_FLAG);
-    // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    if (flags.get() != START_TRACK_FLAG)
+        flags.set(START_SCAN_FLAG);
 }
 
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
 
-    // // Crash test...
-    // for (uint8_t i = 0; i < 3; i++) {
-    //     static uint8_t state = 0;
-
-    //     digitalWrite(LED_BUILTIN, state);
-    //     state = !state;
-    //     delay(200);
-    // }
-    
     turretInitXAxis(1, 0);
     turretInitYAxis(6);
     
@@ -90,11 +81,11 @@ bool scan() {
             
             // Check if hot object is in frame
             if (objs.objCount > 0) {
+                flags.set(START_TRACK_FLAG);
                 break;
             }
         }
         turretSetXMovement(0);
-        flags.set(START_TRACK_FLAG);
         flags.clear(START_SCAN_FLAG);
     }
 }
@@ -110,8 +101,9 @@ bool track() {
         flags.wait_any(NEW_FRAME_FLAG);
 
         AllPerceivedObjs allObjs = processImage(frame);
-        if (allObjs.objCount > 0){
+        if (allObjs.objCount < 1){
             flags.clear(START_TRACK_FLAG);
+            turretSetXMovement(0);
             continue;
         }
         PerceivedObj* objs = allObjs.objs;
@@ -146,27 +138,3 @@ void systemUpdate() {
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug...
     }
 }
-
-// void testServo(){
-//     while (true) {
-//         flags.wait_any(START_SERVO_FLAG, osWaitForever, false);
-
-//         turretSetXMovement(0.4);
-//         for (size_t i = 0; i < 45; i++)
-//         {
-//             turretSetYMovement(0.1);
-//             ThisThread::sleep_for(30);
-//         }
-//         turretSetXMovement(-0.4);
-
-//         for (size_t i = 0; i < 45; i++)
-//         {
-//             turretSetYMovement(-0.1);
-//             ThisThread::sleep_for(30);
-//         }
-
-//         turretSetXMovement(0);
-
-//         flags.clear(START_SERVO_FLAG);
-//     }
-// }
