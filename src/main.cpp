@@ -11,14 +11,23 @@ using namespace rtos;
 
 #define START_SERVO_FLAG 0x01
 
-#define MOTOR1_DIR_PIN A3
-#define MOTOR1_SPEED_PIN D2
-#define MOTOR2_DIR_PIN A4
-#define MOTOR2_SPEED_PIN D3
-#define MOTOR3_DIR_PIN D20
-#define MOTOR3_SPEED_PIN D4
-#define MOTOR4_DIR_PIN D21
-#define MOTOR4_SPEED_PIN D2
+// #define MOTOR1_DIR_PIN A3
+// #define MOTOR1_SPEED_PIN D5 //Fr
+// #define MOTOR2_DIR_PIN A4
+// #define MOTOR2_SPEED_PIN D3 //Br
+// #define MOTOR3_DIR_PIN D20
+// #define MOTOR3_SPEED_PIN D4 //Fl
+// #define MOTOR4_DIR_PIN D21
+// #define MOTOR4_SPEED_PIN D2 //Bl
+
+#define MOTOR1_DIR_PIN D20
+#define MOTOR1_SPEED_PIN D4 //Fl
+#define MOTOR2_DIR_PIN A3
+#define MOTOR2_SPEED_PIN D5 //Fr
+#define MOTOR3_DIR_PIN D21
+#define MOTOR3_SPEED_PIN D2 //Bl
+#define MOTOR4_DIR_PIN A4
+#define MOTOR4_SPEED_PIN D3 //Br
 
 MotionControl motionControl(
     MOTOR1_DIR_PIN, MOTOR1_SPEED_PIN,
@@ -79,16 +88,21 @@ void scan(){
 }
 
 void testMovement(){
-    motionControl.moveVector(0.5,0);
+    
+    // analogWrite(MOTOR1_SPEED_PIN, 100);;
+    // analogWrite(MOTOR2_SPEED_PIN, 100);;
+    // analogWrite(MOTOR3_SPEED_PIN, 100);;
+    // analogWrite(MOTOR4_SPEED_PIN, 100);;
+    // motionControl.moveVector(1,0);
     ThisThread::sleep_for(1000);
     
-    motionControl.moveVector(-0.5,0);
+    motionControl.moveVector(-1,0);
     ThisThread::sleep_for(1000);
 
-    motionControl.moveVector(0,0.5);
+    motionControl.moveVector(0,1);
     ThisThread::sleep_for(1000);
 
-    motionControl.moveVector(0,-0.5);
+    motionControl.moveVector(0,-1);
     ThisThread::sleep_for(1000);
 
     motionControl.stop();
@@ -97,7 +111,23 @@ void testMovement(){
     motionControl.moveVector(1,1);
  
     ThisThread::sleep_for(1000);
+    // digitalWrite(MOTOR1_DIR_PIN, 1);
+    // digitalWrite(MOTOR2_DIR_PIN, 1);
+    // digitalWrite(MOTOR3_DIR_PIN, 1);
+    // digitalWrite(MOTOR4_DIR_PIN, 1);
+    // ThisThread::sleep_for(1000);
+
+    // digitalWrite(MOTOR1_DIR_PIN, 0);
+    // digitalWrite(MOTOR2_DIR_PIN, 0);
+    // digitalWrite(MOTOR3_DIR_PIN, 0);
+    // digitalWrite(MOTOR4_DIR_PIN, 0);
+    // ThisThread::sleep_for(1000);
     motionControl.stop();
+    // ThisThread::sleep_for(1000);
+    // analogWrite(MOTOR1_SPEED_PIN, 0);;
+    // analogWrite(MOTOR2_SPEED_PIN, 0);;
+    // analogWrite(MOTOR3_SPEED_PIN, 0);;
+    // analogWrite(MOTOR4_SPEED_PIN, 0);;
 }
 
 void testServo(){

@@ -34,7 +34,7 @@ public:
         pwmChannels[1] = 1;
         pwmChannels[2] = 2;
         pwmChannels[3] = 3;
-        maxSpeed = 255;
+        maxSpeed = 200;
         isMoving = false;
         currentX = 0;
         currentY = 0;
@@ -42,6 +42,7 @@ public:
 
     void begin()
     {
+        
         for (int i = 0; i < 4; i++)
         {
             // Set up direction pins as digital outputs
