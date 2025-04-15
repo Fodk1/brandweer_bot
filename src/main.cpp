@@ -104,12 +104,14 @@ bool track() {
         AllPerceivedObjs allObjs = processImage(frame);
         if (allObjs.objCount > 0)
             lastUsedFrame = millis();
-
-        if (millis() - lastUsedFrame > 5000) {
-            flags.clear(START_TRACK_FLAG);
+        else {
+            if (millis() - lastUsedFrame > 1000) 
+                flags.clear(START_TRACK_FLAG);
             turretSetXMovement(0);
             continue;
         }
+
+
         PerceivedObj* objs = allObjs.objs;
 
         // Select biggest object to track (most hazardous)
@@ -122,7 +124,7 @@ bool track() {
         }
         free(objs); // Other objs no longer needed
         
-        turretSetXMovement((12-selObj.y)/24);
+        turretSetXMovement((selObj.y-12)/24);
     }        
 }
 
