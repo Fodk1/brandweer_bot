@@ -6,7 +6,7 @@
 
 #include "imageProcessing.h"
 
-#define CRITICAL_TEMP 100
+#define CRITICAL_TEMP 30
 #define NONE -1
 
 /*

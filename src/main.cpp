@@ -35,13 +35,14 @@ void ISR(){
 }
 
 void setup() {
+    pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
 
     turretInitXAxis(1, 0);
     turretInitYAxis(6);
 
+    thermalCamInit();
     gyroInit();
-
     // Debug...
     for (size_t i = 0; i < 2; i++){
         digitalWrite(LED_BUILTIN, 1);
@@ -50,7 +51,7 @@ void setup() {
         delay(200);
     }
     
-    startTimer(5000, ISR); // Debug...
+    // startTimer(5000, ISR); // Debug...
     
     startWatchdog(2000); // Debug...
 
@@ -70,11 +71,13 @@ void loop() {
                 currMode = TRACK_MODE; // Hot object in frame, start tracking it
                 break;
             }
-            delay(5000);
+            delay(5000);    
             // startTimer(5000, ISR); // not Sleep for 5 seconds
             break;
 
         case TRACK_MODE:
+            digitalWrite(LED_BUILTIN, 1);
+            
             Serial.println("Tracking!!!");
             break;
 
@@ -90,11 +93,11 @@ bool scan() {
     turretSetXMovement(-0.5);
 
     while (getXAxis() < startPos + 360) {
-        getFrame(frame);
-
         // Check if hot object is in frame
-        if (processImage(frame).objCount > 0) 
+        if (processImage(frame).objCount > 0){ 
+            turretSetXMovement(0);
             return true; // Hot object detected
+        }
     }
     
     turretSetXMovement(0);
@@ -103,8 +106,9 @@ bool scan() {
 
 void systemUpdate(){
     while(1){
-        gyroUpdate();
         feedWatchdog();
+        gyroUpdate();
+        getFrame(frame);
     }
 }
 
