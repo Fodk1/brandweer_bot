@@ -42,6 +42,15 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
 
+    // Crash test...
+    for (uint8_t i = 0; i < 3; i++) {
+        static uint8_t state = 0;
+
+        digitalWrite(LED_BUILTIN, state);
+        state = !state;
+        delay(200);
+    }
+    
     turretInitXAxis(1, 0);
     turretInitYAxis(6);
 
