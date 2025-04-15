@@ -7,6 +7,7 @@
 #include "turretMovement.h"
 #include "timerInterrupt.h"
 #include "thermalCam.h"
+#include "pidController.h"
 
 extern "C" {
     #include "imageProcessing.h"
@@ -48,8 +49,9 @@ void setup() {
     
     digitalWrite(LED_BUILTIN, LOW); // Debug
 
-    startTimer(5000, ISR); // Debug...
-    
+    startTimer(10000, ISR); // Debug...
+    attachInterrupt(digitalPinToInterrupt(A0), ISR, FALLING);
+    pinMode(A0, INPUT_PULLUP);
     startWatchdog(2000); // Debug...
 
     systemThread.start(systemUpdate);
@@ -94,6 +96,9 @@ bool scan() {
  * Track a fire if one has been detected
  */
 bool track() {
+    static PidController xpid(1,1,1, 12); 
+    static PidController ypid(1,1,1, 16); 
+
     while (1)
     {
         static unsigned long lastUsedFrame = 0;
@@ -124,6 +129,17 @@ bool track() {
         }
         free(objs); // Other objs no longer needed
         
+        float x = selObj.y;
+        float y = selObj.x;
+
+        float xMove = xpid.pid(x, (millis() - lastUsedFrame)/1000);
+        float yMove = ypid.pid(y, (millis() - lastUsedFrame)/1000);
+
+        xMove /= 24;
+        yMove /= 32;
+
+        
+
         turretSetXMovement((selObj.y-12)/24);
     }        
 }
