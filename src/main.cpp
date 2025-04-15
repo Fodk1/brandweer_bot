@@ -8,6 +8,7 @@
 #include "timerInterrupt.h"
 #include "thermalCam.h"
 #include "pidController.h"
+#include "BLEController.h"
 
 extern "C" {
     #include "imageProcessing.h"
@@ -18,6 +19,8 @@ using namespace rtos;
 #define START_SCAN_FLAG 0B01
 #define START_TRACK_FLAG 0B10
 #define NEW_FRAME_FLAG 0B100
+
+#define motorClamp(x) {x > 1 ? 1 : (x < -1 ? -1 : x)}
 
 Thread systemThread;
 Thread scanThread;
@@ -45,6 +48,7 @@ void setup() {
     turretInitYAxis(6);
     
     gyroInit();
+    BLEInit();
     thermalCamInit();
     
     digitalWrite(LED_BUILTIN, LOW); // Debug
@@ -99,15 +103,15 @@ bool track() {
 
     while (1)
     {
+        static PidController xPID(50, 100, 30, 0.5);
+
         static unsigned long lastUsedFrame = 0;
         flags.wait_any(START_TRACK_FLAG, osWaitForever, false);
 
         flags.wait_any(NEW_FRAME_FLAG);
 
         AllPerceivedObjs allObjs = processImage(frame);
-        if (allObjs.objCount > 0)
-            lastUsedFrame = millis();
-        else {
+        if (allObjs.objCount < 1) {
             if (millis() - lastUsedFrame > 1000) 
                 flags.clear(START_TRACK_FLAG);
             turretSetXMovement(0);
@@ -129,10 +133,18 @@ bool track() {
         }        
         free(allObjs.objs);
 
-        turretSetXMovement((selObj.y-12)/24);
-        turretSetYMovement((selObj.x-16)/32);
+        float timeStep = (millis() - lastUsedFrame) / 10000.0;
+        float x = (selObj.y / (IMAGE_HEIGHT / 2 - 1) - 1) * -1;
+        float y = selObj.x / (IMAGE_WIDTH / 2) - 1;
 
-        
+        // Serial.println(x);
+
+        turretSetXMovement((xPID.pid(x, timeStep) / 500));
+        // turretSetYMovement((selObj.x-16)/32);
+        // Serial.println(xPID.pid(x, timeStep) / 500);
+
+        if (allObjs.objCount > 0)
+            lastUsedFrame = millis();
     }        
 }
 
@@ -162,6 +174,7 @@ void systemUpdate() {
 
         if (flags.get() == START_SCAN_FLAG)
             gyroUpdate(); // Gyro is not needed in track mode
+        BLEUpdate();
         digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug...
     }
 }
