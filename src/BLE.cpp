@@ -123,6 +123,7 @@ void onCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic
   }
   
   // Parse the command
+<<<<<<< HEAD
   if (data.startsWith("E:")) {
     //E:lf:lf:rf:lb:rb
 
@@ -152,6 +153,29 @@ void onCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic
 
         digitalWrite(motorsDir[i], dir);
         prevColon = nextColon;
+=======
+  if (data.startsWith("J:")) {
+    // Joystick command format: "J:L:x:y" or "J:R:x:y"
+    int firstColon = data.indexOf(':');
+    int secondColon = data.indexOf(':', firstColon + 1);
+    int thirdColon = data.indexOf(':', secondColon + 1);
+    
+    if (firstColon >= 0 && secondColon >= 0 && thirdColon >= 0) {
+      String joystick = data.substring(firstColon + 1, secondColon);
+      int x = data.substring(secondColon + 1, thirdColon).toInt();
+      int y = data.substring(thirdColon + 1).toInt();
+      
+      bool isLeft = (joystick == "L");
+      
+      // Process joystick input
+      // handleJoystickInput(isLeft, x, y);
+      
+      // Send acknowledgment
+      String response = "ACK:" + data;
+      controlCharacteristic.writeValue(response.c_str(), response.length());
+    } else {
+      Serial.println("Error: Invalid joystick data format");
+>>>>>>> 20c93d0d2755a42874cbd56ddf235210583663d3
     }
   } 
   else if (data.startsWith("B:")) {
@@ -163,7 +187,11 @@ void onCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic
       Serial.println(button);
       
       // Process button input
+<<<<<<< HEAD
     //   handleButtonInput(button);
+=======
+      // handleButtonInput(button);
+>>>>>>> 20c93d0d2755a42874cbd56ddf235210583663d3
       
       // Send acknowledgment
       String response = "ACK:" + data;
