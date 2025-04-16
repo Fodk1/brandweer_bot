@@ -1,6 +1,6 @@
 // Only runs on core: M7
 #include <Arduino.h>
-#include "rtos.h"
+#include "rtos.h"   
 
 #include "gyro.h"
 #include "watchdog.h"
@@ -9,6 +9,7 @@
 #include "thermalCam.h"
 #include "pidController.h"
 #include "BLEController.h"
+#include "flags.h"
 
 extern "C" {
     #include "imageProcessing.h"
@@ -16,16 +17,11 @@ extern "C" {
 
 using namespace rtos;
 
-#define START_SCAN_FLAG 0B01
-#define START_TRACK_FLAG 0B10
-#define NEW_FRAME_FLAG 0B100
-
 #define motorClamp(x) {x > 1 ? 1 : (x < -1 ? -1 : x)}
 
 Thread systemThread;
 Thread scanThread;
 Thread trackThread;
-EventFlags flags;
 
 
 // Buffer for frame captured by the thermal camera
@@ -76,11 +72,17 @@ bool scan() {
     {
         flags.wait_any(START_SCAN_FLAG, osWaitForever, false);
 
+
+
         float startPos = getXAxis();
         turretSetXMovement(-0.5);
 
         while (getXAxis() < startPos + 360) {
-            flags.wait_any(NEW_FRAME_FLAG);
+
+            if (flags.get() & MANUAL_CONTROL_FLAG)
+                continue;
+            
+                flags.wait_any(NEW_FRAME_FLAG);
             
             AllPerceivedObjs objs = processImage(frame);
             free(objs.objs); // Actual objects are not needed, just the count
@@ -103,6 +105,9 @@ bool track() {
 
     while (1)
     {
+        if (flags.get() & MANUAL_CONTROL_FLAG)
+            continue;
+
         static PidController xPID(0.2, 0.01, 0.03, 0);
         static PidController yPID(0.5, 0.01, 0.03, 0);
 
