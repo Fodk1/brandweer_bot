@@ -17,7 +17,7 @@ float PidController::pid(float input, float timeStep) {
 
     // Calculate derivative and integral
     float derivative = (error - this -> prevError) / timeStep;
-    this -> integral += prevError * timeStep;
+    this -> integral += error * timeStep;
 
     this -> prevError = error;
     return this -> p * error + this -> i * this -> integral + this -> d * derivative;
