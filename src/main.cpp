@@ -19,12 +19,9 @@ extern "C" {
 
 using namespace rtos;
 
-#define motorClamp(x) {x > 1 ? 1 : (x < -1 ? -1 : x)}
-
 Thread systemThread;
 Thread scanThread;
 Thread trackThread;
-
 
 // Buffer for frame captured by the thermal camera
 uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
@@ -49,22 +46,21 @@ void setup() {
     BLEInit();
     thermalCamInit();
 
-    startTimer(10000, ISR); // Debug...
+    startTimer(10000, ISR);
     attachInterrupt(digitalPinToInterrupt(A0), ISR, FALLING);
     pinMode(A0, INPUT_PULLUP);
-    startWatchdog(2000); // Debug...
+    startWatchdog(2000);
 
     systemThread.start(systemUpdate);
     scanThread.start(scan);
     trackThread.start(track);
 
-    digitalWrite(LED_BUILTIN, LOW); // Debug
+    digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop() {
     delay(1000);
 }
-
 
 /**
  * Scan around the robot using the x-axis rotation to detect fires
@@ -98,6 +94,7 @@ bool scan() {
         }
         turretSetXMovement(0);
         flags.clear(START_SCAN_FLAG);
+        __WFI(); // If no fire is detected wait until next interrupt
     }
 }
 
@@ -145,11 +142,9 @@ bool track() {
         float x = ((selObj.y - (IMAGE_HEIGHT - 1) / 2.0f) / ((IMAGE_HEIGHT - 1) / 2.0f)) * -1;
         float y = ((selObj.x - (IMAGE_WIDTH - 1) / 2.0f) / ((IMAGE_WIDTH - 1) / 2.0f)) * -1;
 
-        // Serial.println(yPID.pid(y, timeStep));
 
         turretSetXMovement(xPID.pid(x, timeStep));
         turretSetYMovement(yPID.pid(y, timeStep));
-        // turretSetYMovement((selObj.x-16)/32);
 
         if (allObjs.objCount > 0)
             lastUsedFrame = millis();
@@ -165,24 +160,11 @@ void systemUpdate() {
         
         getFrame(frame);
 
-        // for (size_t i = 0; i < 24; i++)
-        // {
-        //     for (size_t n = 0; n < 32; n++)
-        //     {
-        //         Serial.println(frame[i][n]);
-        //     }
-        //     Serial.println();
-        // }
-
-        // ThisThread::sleep_for(1000);
-        
-
         lastFrameUpdate = millis();
         flags.set(NEW_FRAME_FLAG);
 
         if (flags.get() == START_SCAN_FLAG)
             gyroUpdate(); // Gyro is not needed in track mode
         BLEUpdate();
-        // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug...
     }
 }
