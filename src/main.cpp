@@ -9,7 +9,9 @@
 #include "thermalCam.h"
 #include "pidController.h"
 #include "BLEController.h"
+
 #include "flags.h"
+rtos::EventFlags flags;
 
 extern "C" {
     #include "imageProcessing.h"
@@ -46,8 +48,6 @@ void setup() {
     gyroInit();
     BLEInit();
     thermalCamInit();
-    
-    digitalWrite(LED_BUILTIN, LOW); // Debug
 
     startTimer(10000, ISR); // Debug...
     attachInterrupt(digitalPinToInterrupt(A0), ISR, FALLING);
@@ -57,6 +57,8 @@ void setup() {
     systemThread.start(systemUpdate);
     scanThread.start(scan);
     trackThread.start(track);
+
+    digitalWrite(LED_BUILTIN, LOW); // Debug
 }
 
 void loop() {
@@ -70,9 +72,10 @@ void loop() {
 bool scan() {
     while (1)
     {
+        if (flags.get() & MANUAL_CONTROL_FLAG)
+            continue;
+
         flags.wait_any(START_SCAN_FLAG, osWaitForever, false);
-
-
 
         float startPos = getXAxis();
         turretSetXMovement(-0.5);
@@ -108,7 +111,7 @@ bool track() {
         if (flags.get() & MANUAL_CONTROL_FLAG)
             continue;
 
-        static PidController xPID(0.2, 0.01, 0.03, 0);
+        static PidController xPID(0.2, 0.01, 0.03, 0.4);
         static PidController yPID(0.5, 0.01, 0.03, 0);
 
         static unsigned long lastUsedFrame = 0;
@@ -118,12 +121,11 @@ bool track() {
 
         AllPerceivedObjs allObjs = processImage(frame);
         if (allObjs.objCount < 1) {
-            if (millis() - lastUsedFrame > 1000) 
+            if (millis() - lastUsedFrame > 3000) 
                 flags.clear(START_TRACK_FLAG);
             turretSetXMovement(0);
             continue;
         }
-
 
         PerceivedObj* objs = allObjs.objs;
 
@@ -181,6 +183,6 @@ void systemUpdate() {
         if (flags.get() == START_SCAN_FLAG)
             gyroUpdate(); // Gyro is not needed in track mode
         BLEUpdate();
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug...
+        // digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); // Debug...
     }
 }

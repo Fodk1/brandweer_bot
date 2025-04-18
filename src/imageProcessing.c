@@ -39,7 +39,7 @@ void findObj(const uint16_t image[][IMAGE_WIDTH], uint8_t posState[][IMAGE_WIDTH
     if (posState[startPos.y][startPos.x] != 0) return;
     
     // Map object by using the floodfill algorithm
-    PixPos stack[MAX_STACK_SIZE(IMAGE_WIDTH, IMAGE_HEIGHT)] = {};
+    PixPos stack[IMAGE_WIDTH * IMAGE_HEIGHT] = {};
     uint8_t sp = 0;
 
     ppsPush(stack, &sp, startPos); // Add startpos as first pixel as begin of the flood

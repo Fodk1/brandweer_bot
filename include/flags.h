@@ -8,6 +8,6 @@
 #define NEW_FRAME_FLAG 0B100
 #define MANUAL_CONTROL_FLAG 0B1000
 
-rtos::EventFlags flags;
+extern rtos::EventFlags flags;
 
 #endif

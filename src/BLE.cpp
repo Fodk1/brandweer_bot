@@ -100,11 +100,10 @@ void onCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic
 	// Parse the command
 	if (data.startsWith("X:")) {
 		//X:x
-		int x = data.substring(data.indexOf(":")).toFloat();
+		int x = data.substring(data.indexOf(":")+1, data.lastIndexOf(":")+1).toFloat();
 		turretSetXMovement(x);
-	}
-	else if(data.startsWith("Y:")){
-		int y = data.substring(data.indexOf(":")).toFloat();
+
+		int y = data.substring(data.lastIndexOf("Y")+1).toFloat();
 		turretSetYMovement(y);
 	}
 	else if (data.startsWith("A")) {
