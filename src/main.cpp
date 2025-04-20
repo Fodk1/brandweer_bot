@@ -1,62 +1,172 @@
-#ifdef CORE_CM7
-  #include <RPC.h>
-  
-    void setup() {
-        Serial.begin(115200);
-        RPC.begin();
-    }
-  
-    /*
-     * The loop() function of the M7 core only prints "M7: hello" every second and prints
-     * the objects calculated by the M4 core when they are availible
-     */
-    void loop() {
-        Serial.println("M7: Hello");
-        while (RPC.available()) { // Get the objects from the M4 core
-            Serial.write(RPC.read()); 
-        }  
-        delay(1000);
-    }
-#endif              
+// Het BrandweerBot Team 16-04-2025
 
-#ifdef CORE_CM4    
-    #include <RPC.h>
+// Only runs on core: M7
+#include <Arduino.h>
+#include "rtos.h"   
 
-    extern "C" {
-        #include "image_processing.h"
-    }
- 
-    #define SerialRPC RPC
+#include "gyro.h"
+#include "watchdog.h"
+#include "turretMovement.h"
+#include "timerInterrupt.h"
+#include "thermalCam.h"
+#include "pidController.h"
+#include "BLEController.h"
 
-    uint8_t testImage[10][12] = { // Image to test processing on (no camera availible yet)
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 99, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 99, 0, 0, 0, 0, 0},
-        {0, 0, 0, 5, 4, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 0, 0},
-        {0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0}
-    };
-  
-    void setup() {
-        SerialRPC.begin();
-    }
-  
-    /*
-     * The loop() function of the M4 core processes the 'testImage' every 3 seconds,
-     * the found objects are sent to the M7 core in string format.
-     */
-    void loop() {
-        AllPerceivedObjs allObjs = processImage(testImage); // Calculate targets from image
-        
-        char returnStr[676];
-        for (uint8_t i = 0; i < allObjs.objCount; i++) { // Print all found objects
-            sprintf(returnStr,"Obj %u: y = %f, x = %f, size = %u.", i, allObjs.objs[i].y, allObjs.objs[i].x, allObjs.objs[i].obj_size);
-            SerialRPC.println(returnStr); 
+#include "flags.h"
+rtos::EventFlags flags;
+
+extern "C" {
+    #include "imageProcessing.h"
+}
+
+using namespace rtos;
+
+Thread systemThread;
+Thread scanThread;
+Thread trackThread;
+
+// Buffer for frame captured by the thermal camera
+uint16_t frame[IMAGE_HEIGHT][IMAGE_WIDTH] = {};
+unsigned long lastFrameUpdate = 0;
+
+bool scan();
+bool track();
+void systemUpdate();
+void ISR(){
+    if (flags.get() != START_TRACK_FLAG)
+        flags.set(START_SCAN_FLAG);
+}
+
+void setup() {
+    Serial.begin(115200);
+
+    // Initialise rotation platform
+    turretInitXAxis(1, 0);
+    turretInitYAxis(6);
+    
+    // Initialise sensors
+    gyroInit();
+    BLEInit();
+    thermalCamInit();
+
+    startTimer(10000, ISR);
+    attachInterrupt(digitalPinToInterrupt(A0), ISR, FALLING);
+    pinMode(A0, INPUT_PULLUP);
+    startWatchdog(2000);
+
+    systemThread.start(systemUpdate);
+    scanThread.start(scan);
+    trackThread.start(track);
+}
+
+void loop() { // The main loop is not used
+    delay(1000);
+}
+
+/**
+ * Scan around the robot using the x-axis rotation to detect fires
+ */
+bool scan() {
+    while (1)
+    {
+        if (flags.get() & MANUAL_CONTROL_FLAG)
+            continue;
+
+        flags.wait_any(START_SCAN_FLAG, osWaitForever, false);
+
+        float startPos = getXAxis();
+        turretSetXMovement(-0.5);
+
+        while (getXAxis() < startPos + 360) {
+
+            if (flags.get() & MANUAL_CONTROL_FLAG)
+                continue;
+            
+                flags.wait_any(NEW_FRAME_FLAG);
+            
+            AllPerceivedObjs objs = processImage(frame);
+            free(objs.objs); // Actual objects are not needed, just the count
+            
+            // Check if hot object is in frame
+            if (objs.objCount > 0) {
+                flags.set(START_TRACK_FLAG);
+                break;
+            }
         }
-        delay(3000);
+        turretSetXMovement(0);
+        flags.clear(START_SCAN_FLAG);
+        __WFI(); // If no fire is detected wait until next interrupt
     }
-#endif
+}
+
+/**
+ * Track a fire if one has been detected
+ */
+bool track() {
+
+    while (1)
+    {
+        if (flags.get() & MANUAL_CONTROL_FLAG)
+            continue;
+
+        static PidController xPID(0.2, 0.01, 0.03, 0.4);
+        static PidController yPID(0.5, 0.01, 0.03, 0);
+
+        static unsigned long lastUsedFrame = 0;
+        flags.wait_any(START_TRACK_FLAG, osWaitForever, false);
+
+        flags.wait_any(NEW_FRAME_FLAG);
+
+        // Check if there is still a hot object in frame, else the fire has been extinguished
+        AllPerceivedObjs allObjs = processImage(frame);
+        if (allObjs.objCount < 1) {
+            if (millis() - lastUsedFrame > 3000) 
+                flags.clear(START_TRACK_FLAG);
+            turretSetXMovement(0);
+            continue;
+        }
+        PerceivedObj* objs = allObjs.objs;
+
+        // Select biggest object to track (most hazardous)
+        PerceivedObj selObj;
+        uint16_t currBiggest = 0;
+        for (uint8_t i = 0; i < allObjs.objCount; i++) {
+            
+            if (objs[i].obj_size > currBiggest){
+                currBiggest = objs[i].obj_size;
+                selObj = objs[i];
+            }
+        }        
+        free(allObjs.objs);
+        
+        /*  Map the sensor readings from both the x and y axis to numbers from -1 to 1, this can be used for the PID controller.
+            The x and y axis will also be swapped since the camera is rotated 90 degrees */
+        float timeStep = (millis() - lastUsedFrame) / 1000.0;
+        float x = ((selObj.y - (IMAGE_HEIGHT - 1) / 2.0f) / ((IMAGE_HEIGHT - 1) / 2.0f)) * -1;
+        float y = ((selObj.x - (IMAGE_WIDTH - 1) / 2.0f) / ((IMAGE_WIDTH - 1) / 2.0f)) * -1;
+
+        turretSetXMovement(xPID.pid(x, timeStep));
+        turretSetYMovement(yPID.pid(y, timeStep));
+
+        if (allObjs.objCount > 0)
+            lastUsedFrame = millis();
+    }        
+}
+
+/*
+* Sensor reads for the scan mode
+*/
+void systemUpdate() {
+    while(true) {
+        feedWatchdog();
+        
+        getFrame(frame);
+
+        lastFrameUpdate = millis();
+        flags.set(NEW_FRAME_FLAG);
+
+        if (flags.get() == START_SCAN_FLAG)
+            gyroUpdate(); // Gyro is not needed in track mode
+        BLEUpdate();
+    }
+}
