@@ -44,7 +44,7 @@ free(allObjs.obj); // Make sure to free the memory after use
 
 ### thermalCam.cpp
 
-the [thermalCam.cpp](src\thermalCam.cpp) module is used to communicate with the [MLX90640](https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90640) (thermal camera) via *I2C*.
+the [thermalCam.cpp](src/thermalCam.cpp) module is used to communicate with the [MLX90640](https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90640) (thermal camera) via *I2C*.
 
 **API**
 
@@ -64,7 +64,7 @@ getFrame(frame); // Fill 2D frame buffer with data
 
 ### gyro.cpp
 
-The [gyro.cpp](src\gyro.cpp) module is used to communicate with the [MPU6050](https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf) (gyroscope) via *I2C*.
+The [gyro.cpp](src/gyro.cpp) module is used to communicate with the [MPU6050](https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf) (gyroscope) via *I2C*.
 
 **API**
 
@@ -75,7 +75,7 @@ The API exposes three functions:
 
 ### BLE.cpp
 
-The [BLE.cpp](src\BLE.cpp) module is used to host a bluetooth low power acces point to allow other devices to interface with the portenta H7.
+The [BLE.cpp](src/BLE.cpp) module is used to host a bluetooth low power acces point to allow other devices to interface with the portenta H7.
 
 **API**
 
@@ -85,7 +85,7 @@ The API exposes two functions:
 
 ### timerInterrupt.cpp
 
-The [timerInterrupt.cpp](src\timerInterrupt.cpp) module is start a timer that calls a interrupt after a given time.
+The [timerInterrupt.cpp](src/timerInterrupt.cpp) module is start a timer that calls a interrupt after a given time.
 
 **API**
 
@@ -101,7 +101,7 @@ startTimer(1000, callbackFunction); // Callback function get called every 1000 m
 
 ### watchdog.cpp
 
-The [watchdog.cpp](src\watchdog.cpp) module is used to start and maintain a watchdog timer.
+The [watchdog.cpp](src/watchdog.cpp) module is used to start and maintain a watchdog timer.
 
 **API**
 The API exposes two functions:
@@ -110,7 +110,7 @@ The API exposes two functions:
 
 ### turretMovement.cpp
 
-The [turretMovement.cpp](src\turretMovement.cpp) module is used to rotate the turret on its X and Y axis.
+The [turretMovement.cpp](src/turretMovement.cpp) module is used to rotate the turret on its X and Y axis.
 
 **API**
 The API exposes four functions:
@@ -119,7 +119,7 @@ The API exposes four functions:
 
 ### pidController.cpp
 
-The [pidController.cpp](src\pidController.cpp) module can be used to make a PID controller, it provides an API which can be used to do PID calculations for a certain task.
+The [pidController.cpp](src/pidController.cpp) module can be used to make a PID controller, it provides an API which can be used to do PID calculations for a certain task.
 
 **API**
 
