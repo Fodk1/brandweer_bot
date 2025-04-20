@@ -8,13 +8,16 @@ The microcontroller used for this project is the [Portenta h7](https://docs.ardu
 - *M7* core
 - *M4* core
 
-In this project, the *M7* core will be used for general purpose tasks while the *M4* core will only be used for image processing because this can be quite taxing on the CPU.
+In this project, the *M7* core was supposed to be used for general purpose tasks while the *M4* core would have only be used for image processing because this can be quite taxing on the CPU. However, because of the high clock speed, the whole program could run just fine on only the *m7* core.
 
 ## Modules
 
 ### main.cpp
 
-The program will be uploaded to both cores, the [main.cpp](src/main.cpp) module will determine what part wil be used depending on which core it is running.
+The [main.cpp](src/main.cpp) module will dispatch multiple threads, each with a unique purpose:
+- `systemThread` This tread will collect all of the sensor data needed for calculations to control the system, this thread will always be running.
+- `scanThread` Tis thread will make the robot scan it's surroundings to find fire, this thread will run until fire has been detected.
+- `trackThread` This thread will track fire using the thermal camera and two PID controllers.
 
 ### imageProcessing.c
 
@@ -113,3 +116,26 @@ The [turretMovement.cpp](src\turretMovement.cpp) module is used to rotate the tu
 The API exposes four functions:
 - `turretInitXAxis()` and `turretInitYAxis()` which initialize the required pins for the motors, these functions should be called in the setup of the system.
 - `turretSetXMovement()` and `turretSetYMovement()` which put the motors in motion.
+
+### pidController.cpp
+
+The [pidController.cpp](src\pidController.cpp) module can be used to make a PID controller, it provides an API which can be used to do PID calculations for a certain task.
+
+**API**
+
+The API exposes a class `PidController` which contains a constructor, deconstructor and a function `pid()` which can be used to do the PID calculations. 
+
+To use the API a `PidController` object must be made, the PID values as well as the target value must be specified here, after this the pid() function can be used with sensor values to calculate the next PID value.
+
+**Usage**
+
+```cpp
+// Make a PidController object
+static PidController xPID(0.2, 0.01, 0.03, 0.4);
+
+float value = sensorGetVal(); // get a sensor value
+float pidVal = xPID.pid(value, 0.2); // Calculate the next PID value with the sensor input and a time step
+
+// Use the PID value and repeat the loop
+setMotor(pidVal);
+```

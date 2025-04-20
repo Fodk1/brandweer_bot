@@ -1,3 +1,5 @@
+// Het BrandweerBot Team 16-04-2025
+
 #include <Wire.h>
 #include <math.h>
 #include <Arduino.h>
@@ -48,10 +50,12 @@ uint8_t toRefreshRateCommand(float refreshRate) {
 }
 
 /*
-* MLX90640 driver implementation:
-* To use the MLX90640 library, functions for I2C communication should be implemented
-* for the driver.
-*/
+ * MLX90640 driver implementation:
+ * To use the MLX90640 library, functions for I2C communication should be implemented
+ * for the driver.
+ *
+ * https://github.com/melexis/mlx90640-library
+ */
 
 void MLX90640_I2CInit() {
     Wire.begin();
@@ -68,29 +72,24 @@ int MLX90640_I2CRead(uint8_t slaveAddr, uint16_t startAddress, uint16_t nMemAddr
     uint16_t remaining = nMemAddressRead;
     uint16_t addr = startAddress;
 
+    /*  Burst read all registers from startAdress to startAdress + nMemAdressRead,
+        Burst reads must be done in chunks to not overflow the wire read buffer */
     while (remaining > 0) {
         uint8_t readCount = remaining > READ_BUFFER_16 ? READ_BUFFER_16 : remaining;
 
         Wire.beginTransmission(slaveAddr);
         sendTwoBytes(addr);
-        if (Wire.endTransmission(false) != 0) {
-            Serial.println("I2C write failed");
+        if (Wire.endTransmission(false) != 0)
             return -1;
-        }
 
         uint8_t bytesToRead = readCount * 2;
-        uint8_t bytesReceived = Wire.requestFrom((int)slaveAddr, (int)bytesToRead);
-        if (bytesReceived != bytesToRead) {
-            Serial.print("I2C read error: expected ");
-            Serial.print(bytesToRead);
-            Serial.print(" bytes, got ");
-            Serial.println(bytesReceived);
+        uint8_t bytesReceived = Wire.requestFrom((int) slaveAddr, (int) bytesToRead);
+        if (bytesReceived != bytesToRead)
             return -2;
-        }
 
-        for (uint8_t i = 0; i < readCount; i++) {
-            data[(addr - startAddress) + i] = ((uint16_t)Wire.read() << 8) | Wire.read();
-        }
+        // Read chunk
+        for (uint8_t i = 0; i < readCount; i++)
+            data[(addr - startAddress) + i] = ((uint16_t) Wire.read() << 8) | Wire.read();
 
         addr += readCount;
         remaining -= readCount;
@@ -115,6 +114,10 @@ int MLX90640_I2CWrite(uint8_t slaveAddr, uint16_t writeAddress, uint16_t data) {
 void MLX90640_I2CFreqSet(int freq) {
     Wire.setClock(freq);
 }
+
+/**
+ * API functions
+ */
 
 void getFrame(uint16_t image[][IMAGE_WIDTH]) {
     
@@ -151,11 +154,13 @@ void thermalCamInit() {
     MLX90640_I2CInit();
     MLX90640_I2CFreqSet(1000000);
 
+    // The status register keeps resetting itself, therfore it must be set manually at initialisation
     MLX90640_I2CWrite(CAM_SLAVE_ADDR, 0x800D, 0b0001100100000001);
+
     MLX90640_SetRefreshRate(CAM_SLAVE_ADDR, toRefreshRateCommand(REFRESH_RATE));
     MLX90640_SetResolution(CAM_SLAVE_ADDR, 0x00);
 
-    delay(500);
+    delay(100); // Small delay to ensure the commands have been properly handled
 
     MLX90640_DumpEE(CAM_SLAVE_ADDR, eeData);
     MLX90640_ExtractParameters(eeData, &mlxParams);
@@ -163,6 +168,4 @@ void thermalCamInit() {
 
 void thermalCamTerminate() {
     Wire.end();
-
-    // TODO: Turn off camera sensor?
 }

@@ -1,3 +1,5 @@
+// Het BrandweerBot Team 16-04-2025
+
 // Only runs on core: M7
 #include <Arduino.h>
 #include "rtos.h"   
@@ -36,12 +38,13 @@ void ISR(){
 }
 
 void setup() {
-    pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(115200);
 
+    // Initialise rotation platform
     turretInitXAxis(1, 0);
     turretInitYAxis(6);
     
+    // Initialise sensors
     gyroInit();
     BLEInit();
     thermalCamInit();
@@ -54,11 +57,9 @@ void setup() {
     systemThread.start(systemUpdate);
     scanThread.start(scan);
     trackThread.start(track);
-
-    digitalWrite(LED_BUILTIN, LOW);
 }
 
-void loop() {
+void loop() { // The main loop is not used
     delay(1000);
 }
 
@@ -116,6 +117,7 @@ bool track() {
 
         flags.wait_any(NEW_FRAME_FLAG);
 
+        // Check if there is still a hot object in frame, else the fire has been extinguished
         AllPerceivedObjs allObjs = processImage(frame);
         if (allObjs.objCount < 1) {
             if (millis() - lastUsedFrame > 3000) 
@@ -123,7 +125,6 @@ bool track() {
             turretSetXMovement(0);
             continue;
         }
-
         PerceivedObj* objs = allObjs.objs;
 
         // Select biggest object to track (most hazardous)
@@ -137,11 +138,12 @@ bool track() {
             }
         }        
         free(allObjs.objs);
-
+        
+        /*  Map the sensor readings from both the x and y axis to numbers from -1 to 1, this can be used for the PID controller.
+            The x and y axis will also be swapped since the camera is rotated 90 degrees */
         float timeStep = (millis() - lastUsedFrame) / 1000.0;
         float x = ((selObj.y - (IMAGE_HEIGHT - 1) / 2.0f) / ((IMAGE_HEIGHT - 1) / 2.0f)) * -1;
         float y = ((selObj.x - (IMAGE_WIDTH - 1) / 2.0f) / ((IMAGE_WIDTH - 1) / 2.0f)) * -1;
-
 
         turretSetXMovement(xPID.pid(x, timeStep));
         turretSetYMovement(yPID.pid(y, timeStep));
